@@ -8,7 +8,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
 django.setup()
 
 from apps.scenarios.models import Scenario
-from apps.forms.models import FormField
+from apps.forms.models import FormField, Form
 from apps.menu.models import MenuField, Menu
 
 
@@ -26,8 +26,12 @@ def get_elements_for_scenario(scenario):
     return list(scenario.elements.order_by('order'))
 
 @sync_to_async
+def get_form(form_id):
+    return Form.objects.get(id=form_id)
+
+@sync_to_async
 def get_fields_for_form(form_id):
-    return list(FormField.objects.filter(form_id=form_id))
+    return list(FormField.objects.filter(form_id=form_id, hidden=False))
 
 
 @sync_to_async

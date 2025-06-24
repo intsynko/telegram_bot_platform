@@ -41,11 +41,12 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     scenario = await django_client.get_scenario_by_id(scenario_id)
     elements = await django_client.get_elements_for_scenario(scenario)
     if step >= len(elements):
-        await update.message.reply_text('...')
+        await update.message.reply_text(f'... {context.user_data['answers']}')
         return ConversationHandler.END
     element = elements[step]
     if element.action_type == 'form':
         fields = await django_client.get_fields_for_form(element.form_id)
+        context.user_data['form_id'] = element.form_id
         if not fields:
             await update.message.reply_text('В форме нет полей.')
             context.user_data['step'] += 1
@@ -90,13 +91,17 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def ask_form_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
     fields = context.user_data['fields']
     idx = context.user_data['field_idx']
-    if idx >= len(fields):
-        context.user_data['step'] += 1
-        return await ask_next_question(update, context)
-    if idx >= 0:
+    if idx > 0 and idx <= len(fields):
         result = await handle_answer(update, context)
         if result == ASKING:
             return ASKING
+    if idx >= len(fields):
+        context.user_data['step'] += 1
+        form = await django_client.get_form(form_id=context.user_data['form_id'])
+        if form.final_message:
+            await update.message.reply_text(form.final_message,reply_markup=ReplyKeyboardMarkup([]))
+
+        return await ask_next_question(update, context)
     field = fields[idx]
     context.user_data['field_idx'] += 1
 
@@ -140,8 +145,18 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     field = fields[idx - 1]
     value = update.message.text
     # PHONE: получаем номер из контакта
-    if field.field_type == 'phone' and update.message.contact:
-        value = update.message.contact.phone_number
+    if field.field_type == 'phone':
+        value = None
+        if update.message.contact:
+            value = update.message.contact.phone_number
+
+        if not value:
+            keyboard = ReplyKeyboardMarkup(
+                [[KeyboardButton('Отправить номер', request_contact=True)]],
+                one_time_keyboard=True, resize_keyboard=True
+            )
+            await update.message.reply_text("Пожалуйста, отправьте номер:", reply_markup=keyboard)
+            return ASKING
     # INT: валидация
     if field.field_type == 'int':
         if not value.isdigit():
@@ -166,7 +181,7 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def run_telegram_bot(token, id):
     application = Application.builder().token(token).build()
     application.add_handler(CommandHandler('start', start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, run_scenario))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND | filters.CONTACT, run_scenario))
     # application.add_handler(conv_handler)
     application.run_polling()
 

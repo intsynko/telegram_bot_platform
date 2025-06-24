@@ -4,9 +4,11 @@ from django.db import models
 
 class Form(models.Model):
     name = models.CharField(max_length=255)
+    final_message = models.CharField(max_length=255, default="")
 
     def __str__(self):
         return self.name
+
 
 class FormField(models.Model):
     FIELD_TYPES = [
@@ -26,6 +28,7 @@ class FormField(models.Model):
     form = models.ForeignKey(Form, related_name='fields', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     field_type = models.CharField(max_length=20, choices=FIELD_TYPES)
+    hidden = models.BooleanField(default=False)
     required = models.BooleanField(default=False)
     default_value = models.CharField(max_length=255, blank=True, null=True)
 
