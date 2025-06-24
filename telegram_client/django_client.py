@@ -3,13 +3,14 @@ import sys
 import django
 from asgiref.sync import sync_to_async
 
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+ '/app')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
 django.setup()
 
-from apps.scenarios.models import Scenario, ScenarioElement
-from apps.forms.models import Form, FormField
+from apps.scenarios.models import Scenario
+from apps.forms.models import FormField
+from apps.menu.models import MenuField, Menu
+
 
 
 @sync_to_async
@@ -27,3 +28,12 @@ def get_elements_for_scenario(scenario):
 @sync_to_async
 def get_fields_for_form(form_id):
     return list(FormField.objects.filter(form_id=form_id))
+
+
+@sync_to_async
+def get_fields_for_menu(menu_id):
+    return list(MenuField.objects.filter(menu_id=menu_id))
+
+@sync_to_async
+def get_menu(menu_id):
+    return Menu.objects.get(id=menu_id)

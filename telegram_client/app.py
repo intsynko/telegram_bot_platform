@@ -3,15 +3,15 @@ import os
 import re
 from datetime import datetime
 
+from telegram import Update, ForceReply, ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
+
+from telegram_client import django_client
+
+from apps.menu.models import MenuField
 logging.basicConfig(
     level=logging.INFO
 )
-
-from telegram import Update, ForceReply, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
-from telegram_client import django_client
-from asgiref.sync import sync_to_async
-
 logger = logging.getLogger(__name__)
 
 ASKING, = range(1)
@@ -24,9 +24,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def run_scenario(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.user_data.get('greeted'):
-        await update.message.reply_text('Привет! Я бот для прохождения сценариев.', reply_markup=ReplyKeyboardMarkup([]))
-        context.user_data['greeted'] = True
     if not context.user_data.get('scenario_id'):
         scenario = await django_client.get_first_scenario()
         if not scenario:
@@ -44,7 +41,7 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     scenario = await django_client.get_scenario_by_id(scenario_id)
     elements = await django_client.get_elements_for_scenario(scenario)
     if step >= len(elements):
-        await update.message.reply_text('Сценарий завершён! Спасибо за ответы.')
+        await update.message.reply_text('...')
         return ConversationHandler.END
     element = elements[step]
     if element.action_type == 'form':
@@ -57,6 +54,33 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data['fields'] = fields
             context.user_data['field_idx'] = 0
         return await ask_form_field(update, context)
+    elif element.action_type == 'menu':
+        fields = await django_client.get_fields_for_menu(element.menu_id)
+        menu = await django_client.get_menu(element.menu_id)
+        if context.user_data.get('asked'):
+            del context.user_data['asked']
+            value = update.message.text
+            for field in fields:
+                if value == field.name:
+                    if field.field_type == MenuField.SCENARIO_ELEMENT_LINK:
+                        next_step = next(
+                            (
+                                index
+                                for index, element in enumerate(elements)
+                                if element.id == field.linked_element_id
+                            ),
+                            None
+                        )
+                        context.user_data['step'] = next_step
+                        return await ask_next_question(update, context)
+        keyboard = ReplyKeyboardMarkup([
+            [
+                KeyboardButton(field.name)
+                for field in fields
+            ]
+        ], one_time_keyboard=True, resize_keyboard=True)
+        await update.message.reply_text(menu.name, reply_markup=keyboard)
+        context.user_data['asked'] = True
     else:
         await update.message.reply_text('Неизвестный тип действия или не задана форма.')
         context.user_data['step'] += 1
