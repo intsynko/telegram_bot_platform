@@ -1,0 +1,8 @@
+.idea
+venv
+**/__pycache__/*
+/static_files/
+/media/
+.env
+/db/
+/.github/

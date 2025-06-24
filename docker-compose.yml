@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./db/data:/var/lib/postgresql/data
+      - ./db/backup:/backup
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    command: gunicorn server.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  web_migrate:
+    image: web:latest
+    command: python manage.py migrate
+    env_file:
+      - .env
+    environment:
+      DB_HOST: "db"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
