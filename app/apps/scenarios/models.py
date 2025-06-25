@@ -12,6 +12,7 @@ class ScenarioElement(models.Model):
     ACTION_TYPES = [
         ('form', 'Форма'),
         ('menu', 'Меню'),
+        ('break', 'Выход из диалога'),
     ]
     scenario = models.ForeignKey(Scenario, related_name='elements', on_delete=models.CASCADE)
     action_type = models.CharField(max_length=20, choices=ACTION_TYPES)

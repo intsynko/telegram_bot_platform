@@ -18,6 +18,7 @@ class MenuField(models.Model):
     menu = models.ForeignKey(Menu, related_name='fields', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     field_type = models.CharField(max_length=55, choices=FIELD_TYPES)
+    show_condition = models.CharField(max_length=1000, null=True, blank=True)
     linked_element = models.ForeignKey('scenarios.ScenarioElement', null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):
