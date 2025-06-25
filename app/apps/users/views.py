@@ -19,7 +19,7 @@ class LoginView(APIView):
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
-        user = authenticate(request, email=email, password=password)
+        user = authenticate(request, username=email, password=password)
         if user:
             login(request, user)
             return Response(UserSerializer(user).data)
