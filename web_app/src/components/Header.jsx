@@ -12,10 +12,11 @@ export default function Header({ user, setUser }) {
       </div>
       <nav style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         {user ? (
-          <div>
-            <Link to="/bots" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Мои боты</Link>
+          <>
+            <Link to="/scenarios" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Сценарии</Link>
+            <Link to="/bots" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Боты</Link>
             <span style={{ marginLeft: 16 }}>{user.email}</span>
-          </div>
+          </>
         ) : (
           <button onClick={() => setShowAuth(true)} style={{ marginLeft: 16, padding: '6px 18px', borderRadius: 6, border: '1px solid #1890ff', background: '#fff', color: '#1890ff', cursor: 'pointer' }}>Войти</button>
         )}
