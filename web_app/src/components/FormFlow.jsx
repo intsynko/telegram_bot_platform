@@ -16,8 +16,14 @@ import ScenarioSelector from '../components/ScenarioSelector';
 
 const FIELD_TYPES = [
   { value: 'string', label: 'Строка' },
-  { value: 'int', label: 'Число' },
+  { value: 'int', label: 'Число целое' },
+  { value: 'decimal', label: 'Число дробное' },
   { value: 'date', label: 'Дата' },
+  { value: 'time', label: 'Время' },
+  { value: 'phone', label: 'Телефон' },
+  { value: 'list', label: 'Список (через запятую)' },
+  { value: 'bool', label: 'Галочка' },
+  { value: 'file', label: 'Файл' },
 ];
 
 // --- СЛЕВА ПАНЕЛЬ ---
@@ -69,7 +75,7 @@ function FormNode({ id, data, selected }) {
 
   // Добавить поле
   const addField = () => {
-    setFields([...fields, { id: uuidv4(), name: '', type: 'string', hidden: false, required: false }]);
+    setFields([...fields, { id: uuidv4(), name: '', type: 'string', hidden: false, required: false, default_value: '' }]);
   };
 
   // Удалить поле
@@ -124,6 +130,12 @@ function FormNode({ id, data, selected }) {
             >
               {FIELD_TYPES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
+            <input
+              value={field.default_value}
+              onChange={e => updateField(field.id, 'default_value', e.target.value)}
+              placeholder="Значение по умолчанию"
+              style={{ flex: 2, marginRight: 4, border: '1px solid #ccc', borderRadius: 4, padding: 2 }}
+            />
             <label style={{ marginRight: 2 }}>
               <input
                 type="checkbox"

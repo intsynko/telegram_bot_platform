@@ -30,7 +30,10 @@ async def ask_form_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return FINISHED
         # return await ask_next_question(update, context)
     field = fields[idx]
-    context.user_data['field_idx'] += 1
+    while field['hidden']:
+        idx += 1
+        field = fields[idx]
+    context.user_data['field_idx'] = idx + 1
 
     # BOOL: кнопки Да/Нет
     if field["type"] == 'bool':
@@ -42,7 +45,7 @@ async def ask_form_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # LIST: варианты ответа
     elif field["type"] == 'list':
         # Предполагаем, что варианты ответа хранятся в field.default_value через запятую
-        options = [opt.strip() for opt in (field.default_value or '').split(',') if opt.strip()]
+        options = [opt.strip() for opt in (field.get("default_value") or '').split(',') if opt.strip()]
         if not options:
             await update.message.reply_text(f"{field["name"]} (нет вариантов)")
             context.user_data['field_idx'] += 1
