@@ -1,4 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
 
 export default function AuthModal({ open, onClose, setUser }) {
   const [tab, setTab] = useState('login');
@@ -6,6 +12,18 @@ export default function AuthModal({ open, onClose, setUser }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [csrfToken, setCsrfToken] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      fetch('http://localhost:8000/api/csrf/', {
+        credentials: 'include',
+      }).then(() => {
+        const token = getCookie('csrftoken');
+        setCsrfToken(token || '');
+      });
+    }
+  }, [open]);
 
   if (!open) return null;
 
@@ -19,7 +37,10 @@ export default function AuthModal({ open, onClose, setUser }) {
         : 'http://localhost:8000/api/users/auth/register/';
       const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
         credentials: 'include',
         body: JSON.stringify({ email, password })
       });
@@ -47,6 +68,7 @@ export default function AuthModal({ open, onClose, setUser }) {
           <button onClick={() => { setTab('register'); setError(''); }} style={{ flex: 1, padding: 8, borderBottom: tab === 'register' ? '2px solid #1890ff' : '2px solid #eee', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', fontWeight: tab === 'register' ? 600 : 400, color: tab === 'register' ? '#1890ff' : '#888', cursor: 'pointer' }}>Регистрация</button>
         </div>
         <form onSubmit={handleSubmit}>
+          <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
           <input
             type="email"
             placeholder="Email"

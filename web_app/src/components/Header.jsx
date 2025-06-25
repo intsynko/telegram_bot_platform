@@ -11,9 +11,6 @@ export default function Header({ user, setUser }) {
         <Link to="/" style={{ textDecoration: 'none', color: '#222' }}>TG Bot Master</Link>
       </div>
       <nav style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div>
-            <Link to="/bots" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Мои боты</Link>
-          </div>
         {user ? (
           <div>
             <Link to="/bots" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Мои боты</Link>
