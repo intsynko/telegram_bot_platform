@@ -31,6 +31,8 @@ function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges }) {
       <ScenarioSelector
         nodes={nodes}
         edges={edges}
+        setNodes={setNodes}
+        setEdges={setEdges}
       />
       <button
         onClick={() => setShowLoadModal(true)}

@@ -43,7 +43,7 @@ function CreateScenarioModal({ open, onClose, onCreate, loading }) {
   );
 } 
 
-export default function ScenarioSelector({ nodes = [], edges = [] }) {
+export default function ScenarioSelector({ nodes = [], edges = [], setNodes, setEdges }) {
   const [scenarios, setScenarios] = useState([]);
   const [currentScenario, setCurrentScenario] = useState('');
   const [scenariosLoading, setScenariosLoading] = useState(false);
@@ -70,6 +70,28 @@ export default function ScenarioSelector({ nodes = [], edges = [] }) {
   useEffect(() => {
     fetchScenarios();
   }, [fetchScenarios]);
+
+  // Подгрузка graph при смене сценария
+  useEffect(() => {
+    if (!currentScenario) return;
+    fetch(`http://localhost:8000/api/scenarios/${currentScenario}/`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.graph) {
+          try {
+            const graph = typeof data.graph === 'string' ? JSON.parse(data.graph) : data.graph;
+            setNodes(Array.isArray(graph.nodes) ? graph.nodes : []);
+            setEdges(Array.isArray(graph.edges) ? graph.edges : []);
+          } catch (e) {
+            setNodes([]);
+            setEdges([]);
+          }
+        } else {
+          setNodes([]);
+          setEdges([]);
+        }
+      });
+  }, [currentScenario, setNodes, setEdges]);
 
   // Создание сценария
   const handleCreateScenario = async (name, csrfToken) => {
