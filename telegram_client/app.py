@@ -55,6 +55,12 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(format_str(node["data"]["text"], context.user_data['answers']))
         context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
         return await ask_next_question(update, context)
+    if node["type"] == 'condition':
+        if check_condition(context.user_data['answers'], node["data"]["expression"]):
+            context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'], condition_value=True)
+        else:
+            context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'], condition_value=False)
+        return await ask_next_question(update, context)
     elif node["type"] == 'form':
         context.user_data['form'] = node
         if not node["data"]["fields"]:

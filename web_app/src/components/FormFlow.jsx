@@ -69,6 +69,13 @@ function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges }) {
         >
           💬 Сообщение
         </div>
+        <div
+          style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
+          draggable
+          onDragStart={e => onDragStart(e, 'condition')}
+        >
+          🔀 Условие
+        </div>
       </div>
     </aside>
   );
@@ -280,11 +287,53 @@ const { updateNode, deleteNode } = data;
   );
 }
 
+function ConditionNode({ id, data, selected }) {
+  const { updateNode, deleteNode } = data;
+  const [expression, setExpression] = useState(data.expression || '');
+
+  useEffect(() => {
+    updateNode(id, { expression });
+    // eslint-disable-next-line
+  }, [expression]);
+
+  return (
+    <div style={{
+      minWidth: 200,
+      background: selected ? '#fffbe6' : '#fff',
+      border: '2px solid #faad14',
+      borderRadius: 8,
+      padding: 10,
+      position: 'relative'
+    }}>
+      <button
+        onClick={() => deleteNode(id)}
+        style={{ position: 'absolute', top: 4, right: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18 }}
+        title="Удалить"
+      >🗑️</button>
+      <div style={{ fontWeight: 'bold', marginBottom: 6 }}>Условие</div>
+      <input
+        value={expression}
+        onChange={e => setExpression(e.target.value)}
+        placeholder="Введите выражение"
+        style={{ width: '100%', border: '1px solid #ccc', borderRadius: 4, padding: 4, marginBottom: 8 }}
+      />
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+        <span style={{ color: '#52c41a', fontWeight: 500 }}>✔ Соблюдено</span>
+        <span style={{ color: '#f5222d', fontWeight: 500 }}>✖ Не соблюдено</span>
+      </div>
+      <Handle type="source" position={Position.Right} id="true" style={{ top: 60, background: '#52c41a' }} />
+      <Handle type="source" position={Position.Right} id="false" style={{ top: 90, background: '#f5222d' }} />
+      <Handle type="target" position={Position.Left} />
+    </div>
+  );
+}
+
 const nodeTypes = {
   form: FormNode,
   menu: MenuNode,
   start: StartNode,
   message: MessageNode,
+  condition: ConditionNode,
 };
 
 function FlowCanvas() {
@@ -354,6 +403,13 @@ function FlowCanvas() {
         type: 'message',
         position,
         data: { text: '' },
+      };
+    } else if (type === 'condition') {
+      node = {
+        id: uuidv4(),
+        type: 'condition',
+        position,
+        data: { expression: '' },
       };
     }
     if (node) setNodes(nds => nds.concat(node));
