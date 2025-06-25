@@ -48,8 +48,6 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.bots',
     'apps.scenarios',
-    'apps.forms',
-    'apps.menu',
 ]
 
 MIDDLEWARE = [
