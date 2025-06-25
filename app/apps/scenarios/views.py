@@ -13,7 +13,7 @@ class ScenariosViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ['retrieve', 'update', 'partial_update']:
             return ScenarioDetailSerializer
-        elif self.action in ['list', 'delete']:
+        elif self.action in ['list', 'delete', 'create']:
             return ScenarioSerializer
         else:
             raise NotImplementedError

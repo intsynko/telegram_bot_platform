@@ -12,6 +12,7 @@ import ReactFlow, {
 } from 'reactflow';
 import { v4 as uuidv4 } from 'uuid';
 import 'reactflow/dist/style.css';
+import ScenarioSelector from './components/ScenarioSelector';
 
 const FIELD_TYPES = [
   { value: 'string', label: 'Строка' },
@@ -23,26 +24,31 @@ const FIELD_TYPES = [
 function Sidebar({ onDragStart }) {
   return (
     <aside style={{ width: 180, padding: 10, background: '#f0f0f0', height: '100vh', borderRight: '1px solid #ddd' }}>
-      <div
-        style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
-        draggable
-        onDragStart={e => onDragStart(e, 'form')}
-      >
-        ➕ Форма
-      </div>
-      <div
-        style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
-        draggable
-        onDragStart={e => onDragStart(e, 'menu')}
-      >
-        ➕ Меню
-      </div>
-      <div
-        style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
-        draggable
-        onDragStart={e => onDragStart(e, 'start')}
-      >
-        🚀 Старт
+      {/* Селектор сценария и кнопка */}
+      <ScenarioSelector/>
+      {/* Элементы для перетаскивания */}
+      <div style={{ borderTop: '1px solid #eee', paddingTop: 14, marginTop: 10 }}>
+        <div
+          style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
+          draggable
+          onDragStart={e => onDragStart(e, 'form')}
+        >
+          ➕ Форма
+        </div>
+        <div
+          style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
+          draggable
+          onDragStart={e => onDragStart(e, 'menu')}
+        >
+          ➕ Меню
+        </div>
+        <div
+          style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
+          draggable
+          onDragStart={e => onDragStart(e, 'start')}
+        >
+          🚀 Старт
+        </div>
       </div>
     </aside>
   );
