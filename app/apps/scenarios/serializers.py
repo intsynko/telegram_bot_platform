@@ -50,6 +50,6 @@ class ScenarioElementSerializer(serializers.ModelSerializer):
 class ScenarioDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Scenario
-        fields = ['id', 'name', 'elements']
+        fields = ['id', 'name', 'graph']
 
-    elements = ScenarioElementSerializer(many=True)
+    # elements = ScenarioElementSerializer(many=True)

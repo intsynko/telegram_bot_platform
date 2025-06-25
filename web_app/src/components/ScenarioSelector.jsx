@@ -43,39 +43,7 @@ function CreateScenarioModal({ open, onClose, onCreate, loading }) {
   );
 } 
 
-
-function SaveScenarioModal({ open, onClose, json }) {
-  if (!open) return null;
-  return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-      background: 'rgba(0,0,0,0.25)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
-    }}>
-      <div style={{ background: '#fff', borderRadius: 10, padding: 32, minWidth: 420, boxShadow: '0 4px 24px rgba(0,0,0,0.10)', position: 'relative' }}>
-        <button onClick={onClose} type="button" style={{ position: 'absolute', top: 12, right: 18, background: 'none', border: 'none', fontSize: 22, color: '#888', cursor: 'pointer', zIndex: 2 }} title="Закрыть">×</button>
-        <h3>Сценарий в формате JSON</h3>
-        <textarea
-          value={json}
-          readOnly
-          style={{ width: '100%', minHeight: 200, fontFamily: 'monospace', marginBottom: 16, padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
-        />
-        <button
-          onClick={() => { navigator.clipboard.writeText(json); }}
-          style={{ width: '100%', padding: 10, borderRadius: 6, background: '#1890ff', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}
-        >
-          Скопировать JSON
-        </button>
-      </div>
-    </div>
-  );
-}
-
-export default function ScenarioSelector({
-  onScenarioChange,
-  onScenarioCreated,
-  nodes,
-  edges,
-}) {
+export default function ScenarioSelector({ nodes = [], edges = [] }) {
   const [scenarios, setScenarios] = useState([]);
   const [currentScenario, setCurrentScenario] = useState('');
   const [scenariosLoading, setScenariosLoading] = useState(false);
@@ -86,7 +54,7 @@ export default function ScenarioSelector({
   const [showSaveModal, setShowSaveModal] = useState(false);
   const csrfToken = getCookie('csrftoken') || '';
 
-  // Получить сценарии с API
+  // Загрузка сценариев
   const fetchScenarios = useCallback(() => {
     setScenariosLoading(true);
     fetch('http://localhost:8000/api/scenarios/', { credentials: 'include' })
@@ -103,29 +71,54 @@ export default function ScenarioSelector({
     fetchScenarios();
   }, [fetchScenarios]);
 
-  const handleCreateScenario = async (name) => {
-    setCreateLoading(true);
+  // Создание сценария
+  const handleCreateScenario = async (name, csrfToken) => {
+    setCreateScenarioLoading(true);
     await fetch('http://localhost:8000/api/scenarios/', {
       method: 'POST',
       credentials: 'include',
       headers: {
-         'Content-Type': 'application/json' , 
-         'X-CSRFToken': csrfToken,
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken,
       },
-      body: JSON.stringify(name),
+      body: JSON.stringify({ name }),
     });
     setShowCreateScenarioModal(false);
-    setCreateLoading(false);
+    setCreateScenarioLoading(false);
     fetchScenarios();
   };
 
+  // Сохранение сценария
+  const handleSaveScenario = async () => {
+    if (!currentScenario) return;
+    const csrfToken = getCookie('csrftoken');
+    const graph = JSON.stringify({ nodes, edges });
+    try {
+      const resp = await fetch(`http://localhost:8000/api/scenarios/${currentScenario}/`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({ graph }),
+      });
+      if (resp.ok) {
+        alert('Сценарий успешно сохранён!');
+      } else {
+        alert('Ошибка при сохранении сценария');
+      }
+    } catch (e) {
+      alert('Ошибка сети при сохранении сценария');
+    }
+  };
+
   return (
-    <div>
     <div style={{ marginBottom: 18, padding: 10, background: '#fff', borderRadius: 6, border: '1px solid #bbb', display: 'flex', flexDirection: 'column', gap: 8 }}>
       <label style={{ fontWeight: 500, marginBottom: 4 }}>Сценарий:</label>
       <select
         value={currentScenario}
-        onChange={e => onScenarioChange(e.target.value)}
+        onChange={e => setCurrentScenario(e.target.value)}
         style={{ marginBottom: 6, padding: 4, borderRadius: 4, border: '1px solid #ccc' }}
         disabled={scenariosLoading}
       >
@@ -141,6 +134,12 @@ export default function ScenarioSelector({
       >
         + Создать сценарий
       </button>
+      <button
+        onClick={handleSaveScenario}
+        style={{ padding: '4px 0', borderRadius: 4, border: '1px solid #52c41a', background: '#fff', color: '#52c41a', cursor: 'pointer', fontSize: 14, marginTop: 8 }}
+      >
+        💾 Сохранить
+      </button>
       <CreateScenarioModal
         open={showCreateScenarioModal}
         onClose={() => setShowCreateScenarioModal(false)}
@@ -148,20 +147,5 @@ export default function ScenarioSelector({
         loading={createScenarioLoading}
       />
     </div>
-    <div>
-      <button
-        onClick={() => setShowSaveModal(true)}
-        style={{ padding: '4px 0', borderRadius: 4, border: '1px solid #52c41a', background: '#fff', color: '#52c41a', cursor: 'pointer', fontSize: 14, marginTop: 8 }}
-      >
-        💾 Сохранить
-      </button>
-      <SaveScenarioModal
-        open={showSaveModal}
-        onClose={() => setShowSaveModal(false)}
-        json={JSON.stringify({ nodes, edges }, null, 2)}
-      />
-    </div>
-    </div>
-    
   );
 }
