@@ -25,8 +25,6 @@ async def ask_form_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return ASKING
     if idx >= len(fields):
         context.user_data['node'] = get_next_node_id_by_source_id(context.user_data['node'], graph)
-        # if form.final_message:
-        #     await update.message.reply_text(form.final_message,reply_markup=ReplyKeyboardMarkup([]))
         return FINISHED
         # return await ask_next_question(update, context)
     field = fields[idx]

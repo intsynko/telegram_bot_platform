@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -44,6 +44,13 @@ function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges }) {
         <div
           style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
           draggable
+          onDragStart={e => onDragStart(e, 'start')}
+        >
+          🚀 Старт
+        </div>
+        <div
+          style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
+          draggable
           onDragStart={e => onDragStart(e, 'form')}
         >
           ➕ Форма
@@ -58,9 +65,9 @@ function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges }) {
         <div
           style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
           draggable
-          onDragStart={e => onDragStart(e, 'start')}
+          onDragStart={e => onDragStart(e, 'message')}
         >
-          🚀 Старт
+          💬 Сообщение
         </div>
       </div>
     </aside>
@@ -238,10 +245,46 @@ function StartNode({ id, data }) {
   );
 }
 
+function MessageNode({ id, data, selected }) {
+const { updateNode, deleteNode } = data;
+  const [text, setText] = useState(data.text || '');
+
+  useEffect(() => {
+    updateNode(id, { text });
+    // eslint-disable-next-line
+  }, [text]);
+
+  return (
+    <div style={{
+      minWidth: 180,
+      background: selected ? '#f6ffed' : '#fff',
+      border: '2px solid #52c41a',
+      borderRadius: 8,
+      padding: 10,
+      position: 'relative'
+    }}>
+      <button
+        onClick={() => deleteNode(id)}
+        style={{ position: 'absolute', top: 4, right: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18 }}
+        title="Удалить"
+      >🗑️</button>
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder="Текст сообщения"
+        style={{ width: '100%', minHeight: 60, border: '1px solid #ccc', borderRadius: 4, padding: 4 }}
+      />
+      <Handle type="source" position={Position.Right} />
+      <Handle type="target" position={Position.Left} />
+    </div>
+  );
+}
+
 const nodeTypes = {
   form: FormNode,
   menu: MenuNode,
   start: StartNode,
+  message: MessageNode,
 };
 
 function FlowCanvas() {
@@ -304,6 +347,13 @@ function FlowCanvas() {
         type: 'start',
         position,
         data: {},
+      };
+    } else if (type === 'message') {
+      node = {
+        id: uuidv4(),
+        type: 'message',
+        position,
+        data: { text: '' },
       };
     }
     if (node) setNodes(nds => nds.concat(node));

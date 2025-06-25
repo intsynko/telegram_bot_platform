@@ -1,19 +1,19 @@
 import json
 import logging
 import os
-import re
-from datetime import datetime
 
-from telegram import Update, ForceReply, ReplyKeyboardMarkup, KeyboardButton
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 
 from telegram_client import django_client
 
-from apps.menu.models import MenuField
-from telegram_client.logic.conditions import check_condition
+from telegram_client.logic.conditions import check_condition, format_str
 from telegram_client.logic.form import ask_form_field
-from telegram_client.logic.graph import get_start, get_node_by_id, \
-    get_next_node_by_source_id, get_next_node_id_by_source_id
+from telegram_client.logic.graph import (
+    get_start,
+    get_node_by_id,
+    get_next_node_id_by_source_id
+)
 
 logging.basicConfig(
     level=logging.INFO
@@ -36,19 +36,26 @@ async def run_scenario(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['scenario_id'] = scenario.id
         context.user_data['graph'] = json.loads(scenario.graph)
         context.user_data['answers'] = {}
+
+    node_id = context.user_data.get('node', None)
+    if node_id is None:
+        context.user_data["node"] = get_start(context.user_data['graph'])["id"]
     return await ask_next_question(update, context)
 
 
 async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     scenario_id = context.user_data.get('scenario_id')
     node_id = context.user_data.get('node', None)
-    scenario = await django_client.get_scenario_by_id(scenario_id)
     if node_id is None:
-        node = get_start(context.user_data['graph'])
+        return FINISHED
     else:
         node = get_node_by_id(node_id, context.user_data['graph'])
 
-    if node["type"] == 'form':
+    if node["type"] == 'message':
+        await update.message.reply_text(format_str(node["data"]["text"], context.user_data['answers']))
+        context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
+        return await ask_next_question(update, context)
+    elif node["type"] == 'form':
         context.user_data['form'] = node
         if not node["data"]["fields"]:
             await update.message.reply_text('В форме нет полей.')

@@ -1,3 +1,4 @@
+import re
 
 
 def check_condition(data, condition):
@@ -30,3 +31,9 @@ def split_condition(condition):
         continue
     return condition[:index], *condition[index+1:].split(' ')
 
+
+def format_str(pattern: str, data: dict):
+    paths = re.findall(r"{{.+}}", pattern)
+    for path in paths:
+        pattern = pattern.replace(path, get_value_by_path(data, path[2:-2]) or "")
+    return pattern
