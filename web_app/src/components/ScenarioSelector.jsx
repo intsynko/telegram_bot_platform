@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -41,7 +42,7 @@ function CreateScenarioModal({ open, onClose, onCreate, loading }) {
       </form>
     </div>
   );
-} 
+}
 
 export default function ScenarioSelector({ nodes = [], edges = [], setNodes, setEdges }) {
   const [scenarios, setScenarios] = useState([]);
@@ -126,12 +127,12 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
         body: JSON.stringify({ graph }),
       });
       if (resp.ok) {
-        alert('Сценарий успешно сохранён!');
+        toast.success('Сценарий успешно сохранён!');
       } else {
-        alert('Ошибка при сохранении сценария');
+        toast.success('Ошибка при сохранении сценария');
       }
     } catch (e) {
-      alert('Ошибка сети при сохранении сценария');
+      toast.success('Ошибка сети при сохранении сценария');
     }
   };
 

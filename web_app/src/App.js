@@ -4,6 +4,8 @@ import Header from './components/Header';
 import LandingPage from './pages/LandingPage';
 import ScenariosPage from './pages/ScenariosPage';
 import BotsListPage from './pages/BotsListPage';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
 function App() {
@@ -27,6 +29,7 @@ function App() {
         <Route path="/scenarios" element={<ScenariosPage />} />
         <Route path="/bots" element={<BotsListPage user={user} />} />
       </Routes>
+      <ToastContainer position="top-right" autoClose={2500} />
     </Router>
   );
 }
