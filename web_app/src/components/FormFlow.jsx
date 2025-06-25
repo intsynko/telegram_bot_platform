@@ -12,8 +12,7 @@ import ReactFlow, {
 } from 'reactflow';
 import { v4 as uuidv4 } from 'uuid';
 import 'reactflow/dist/style.css';
-import ScenarioSelector from './components/ScenarioSelector';
-import LoadScenarioModal from './components/LoadScenarioModal';
+import ScenarioSelector from '../components/ScenarioSelector';
 
 const FIELD_TYPES = [
   { value: 'string', label: 'Строка' },
@@ -33,20 +32,6 @@ function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges }) {
         edges={edges}
         setNodes={setNodes}
         setEdges={setEdges}
-      />
-      <button
-        onClick={() => setShowLoadModal(true)}
-        style={{ padding: '4px 0', borderRadius: 4, border: '1px solid #faad14', background: '#fff', color: '#faad14', cursor: 'pointer', fontSize: 14, marginTop: 8 }}
-      >
-        ⬆️ Загрузить из JSON
-      </button>
-      <LoadScenarioModal
-        open={showLoadModal}
-        onClose={() => setShowLoadModal(false)}
-        onLoad={(nodes, edges) => {
-          setNodes(nodes);
-          setEdges(edges);
-        }}
       />
       {/* Элементы для перетаскивания */}
       <div style={{ borderTop: '1px solid #eee', paddingTop: 14, marginTop: 10 }}>

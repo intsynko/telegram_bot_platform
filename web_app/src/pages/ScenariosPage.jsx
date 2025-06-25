@@ -1,5 +1,5 @@
 import React from 'react';
-import FormFlow from '../FormFlow';
+import FormFlow from '../components/FormFlow';
 
 export default function ScenariosPage() {
   return <FormFlow />;
