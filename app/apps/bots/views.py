@@ -1,9 +1,7 @@
-from django.shortcuts import render
 from rest_framework import viewsets, permissions
-from .models import Bot
-from .serializers import BotSerializer
+from apps.bots.models import Bot
+from apps.bots.serializers import BotSerializer, BotReadSerializer
 
-# Create your views here.
 
 class BotViewSet(viewsets.ModelViewSet):
     serializer_class = BotSerializer
@@ -11,6 +9,12 @@ class BotViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Bot.objects.filter(owner=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action == 'list' or self.action == 'retrieve':
+            return BotReadSerializer
+        else:
+            return BotSerializer
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
