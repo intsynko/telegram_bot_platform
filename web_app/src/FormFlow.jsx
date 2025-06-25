@@ -13,6 +13,7 @@ import ReactFlow, {
 import { v4 as uuidv4 } from 'uuid';
 import 'reactflow/dist/style.css';
 import ScenarioSelector from './components/ScenarioSelector';
+import LoadScenarioModal from './components/LoadScenarioModal';
 
 const FIELD_TYPES = [
   { value: 'string', label: 'Строка' },
@@ -21,11 +22,30 @@ const FIELD_TYPES = [
 ];
 
 // --- СЛЕВА ПАНЕЛЬ ---
-function Sidebar({ onDragStart }) {
+function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges }) {
+  const [showLoadModal, setShowLoadModal] = useState(false);
+
   return (
     <aside style={{ width: 180, padding: 10, background: '#f0f0f0', height: '100vh', borderRight: '1px solid #ddd' }}>
       {/* Селектор сценария и кнопка */}
-      <ScenarioSelector/>
+      <ScenarioSelector
+        nodes={nodes}
+        edges={edges}
+      />
+      <button
+        onClick={() => setShowLoadModal(true)}
+        style={{ padding: '4px 0', borderRadius: 4, border: '1px solid #faad14', background: '#fff', color: '#faad14', cursor: 'pointer', fontSize: 14, marginTop: 8 }}
+      >
+        ⬆️ Загрузить из JSON
+      </button>
+      <LoadScenarioModal
+        open={showLoadModal}
+        onClose={() => setShowLoadModal(false)}
+        onLoad={(nodes, edges) => {
+          setNodes(nodes);
+          setEdges(edges);
+        }}
+      />
       {/* Элементы для перетаскивания */}
       <div style={{ borderTop: '1px solid #eee', paddingTop: 14, marginTop: 10 }}>
         <div
@@ -315,7 +335,13 @@ function FlowCanvas() {
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
-      <Sidebar onDragStart={onDragStart} />
+      <Sidebar
+        onDragStart={onDragStart}
+        nodes={nodes}
+        edges={edges}
+        setNodes={setNodes}
+        setEdges={setEdges}
+      />
       <div style={{ flex: 1, height: '100vh' }} ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes.map(n => ({
