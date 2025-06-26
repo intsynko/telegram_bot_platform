@@ -95,7 +95,8 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
   }, [currentScenario, setNodes, setEdges]);
 
   // Создание сценария
-  const handleCreateScenario = async (name, csrfToken) => {
+  const handleCreateScenario = async (name) => {
+    const csrfToken = getCookie('csrftoken');
     setCreateScenarioLoading(true);
     await fetch('http://localhost:8000/api/scenarios/', {
       method: 'POST',
@@ -104,7 +105,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
         'Content-Type': 'application/json',
         'X-CSRFToken': csrfToken,
       },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(name),
     });
     setShowCreateScenarioModal(false);
     setCreateScenarioLoading(false);
