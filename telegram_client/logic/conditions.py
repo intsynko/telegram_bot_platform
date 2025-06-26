@@ -33,7 +33,7 @@ def split_condition(condition):
 
 
 def format_str(pattern: str, data: dict):
-    paths = re.findall(r"{{.+}}", pattern)
+    paths = re.findall(r"{{['\w\s\.]+}}", pattern)
     for path in paths:
         pattern = pattern.replace(path, get_value_by_path(data, path[2:-2]) or "")
     return pattern
