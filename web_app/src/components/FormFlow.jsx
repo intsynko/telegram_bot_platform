@@ -76,6 +76,13 @@ function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges }) {
         >
           🔀 Условие
         </div>
+        <div
+          style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
+          draggable
+          onDragStart={e => onDragStart(e, 'datawrite')}
+        >
+          📝 Запись данных
+        </div>
       </div>
     </aside>
   );
@@ -328,12 +335,77 @@ function ConditionNode({ id, data, selected }) {
   );
 }
 
+function DataWriteNode({ id, data, selected }) {
+  const { updateNode, deleteNode } = data;
+  const [pairs, setPairs] = useState(data.pairs || []);
+
+  // Добавить новую пару
+  const addPair = () => {
+    setPairs([...pairs, { id: uuidv4(), variable: '', value: '' }]);
+  };
+
+  // Удалить пару
+  const removePair = (pid) => {
+    setPairs(pairs.filter(p => p.id !== pid));
+  };
+
+  // Обновить пару
+  const updatePair = (pid, key, value) => {
+    setPairs(pairs.map(p => p.id === pid ? { ...p, [key]: value } : p));
+  };
+
+  // Сохранять изменения в React Flow
+  useEffect(() => {
+    updateNode(id, { pairs });
+    // eslint-disable-next-line
+  }, [pairs]);
+
+  return (
+    <div style={{
+      minWidth: 220,
+      background: selected ? '#fff0f6' : '#fff',
+      border: '2px solid #eb2f96',
+      borderRadius: 8,
+      padding: 10,
+      position: 'relative'
+    }}>
+      <button
+        onClick={() => deleteNode(id)}
+        style={{ position: 'absolute', top: 4, right: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18 }}
+        title="Удалить"
+      >🗑️</button>
+      <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Запись данных</div>
+      {pairs.map((pair, idx) => (
+        <div key={pair.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+          <input
+            value={pair.variable}
+            onChange={e => updatePair(pair.id, 'variable', e.target.value)}
+            placeholder="Переменная"
+            style={{ flex: 2, marginRight: 4, border: '1px solid #ccc', borderRadius: 4, padding: 2 }}
+          />
+          <input
+            value={pair.value}
+            onChange={e => updatePair(pair.id, 'value', e.target.value)}
+            placeholder="Значение"
+            style={{ flex: 2, marginRight: 4, border: '1px solid #ccc', borderRadius: 4, padding: 2 }}
+          />
+          <button onClick={() => removePair(pair.id)} style={{ color: '#f5222d', border: 'none', background: 'none', cursor: 'pointer' }}>✖</button>
+        </div>
+      ))}
+      <button onClick={addPair} style={{ marginTop: 4, width: '100%' }}>+ Пара</button>
+      <Handle type="source" position={Position.Right} />
+      <Handle type="target" position={Position.Left} />
+    </div>
+  );
+}
+
 const nodeTypes = {
   form: FormNode,
   menu: MenuNode,
   start: StartNode,
   message: MessageNode,
   condition: ConditionNode,
+  datawrite: DataWriteNode,
 };
 
 function FlowCanvas() {
@@ -410,6 +482,13 @@ function FlowCanvas() {
         type: 'condition',
         position,
         data: { expression: '' },
+      };
+    } else if (type === 'datawrite') {
+      node = {
+        id: uuidv4(),
+        type: 'datawrite',
+        position,
+        data: { pairs: [] },
       };
     }
     if (node) setNodes(nds => nds.concat(node));

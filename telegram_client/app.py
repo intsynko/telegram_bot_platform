@@ -61,6 +61,12 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'], condition_value=False)
         return await ask_next_question(update, context)
+    if node["type"] == 'datawrite':
+        for pair in node["data"]["pairs"]:
+            variable, value = pair["variable"], pair["value"]
+            context.user_data['answers'][variable] = value
+        context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
+        return await ask_next_question(update, context)
     elif node["type"] == 'form':
         context.user_data['form'] = node
         if not node["data"]["fields"]:
