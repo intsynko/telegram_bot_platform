@@ -126,7 +126,7 @@ function FormNode({ id, data, selected }) {
     }}>
       <button
         onClick={() => deleteNode(id)}
-        style={{ position: 'absolute', top: 4, right: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18, zIndex: 2 }}
+        style={{ position: 'absolute', top: -10, right: -10, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18, zIndex: 2 }}
         title="Удалить"
       >🗑️</button>
       <input
@@ -211,7 +211,7 @@ function MenuNode({ id, data, selected }) {
     }}>
       <button
         onClick={() => deleteNode(id)}
-        style={{ position: 'absolute', top: 4, right: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18, zIndex: 2 }}
+        style={{ position: 'absolute', top: -10, right: -10, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18, zIndex: 2 }}
         title="Удалить"
       >🗑️</button>
       <input
@@ -279,7 +279,7 @@ const { updateNode, deleteNode } = data;
     }}>
       <button
         onClick={() => deleteNode(id)}
-        style={{ position: 'absolute', top: 4, right: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18 }}
+        style={{ position: 'absolute', top: -10, right: -10, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18 }}
         title="Удалить"
       >🗑️</button>
       <textarea
@@ -314,7 +314,7 @@ function ConditionNode({ id, data, selected }) {
     }}>
       <button
         onClick={() => deleteNode(id)}
-        style={{ position: 'absolute', top: 4, right: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18 }}
+        style={{ position: 'absolute', top: -10, right: -10, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18 }}
         title="Удалить"
       >🗑️</button>
       <div style={{ fontWeight: 'bold', marginBottom: 6 }}>Условие</div>
@@ -324,12 +324,14 @@ function ConditionNode({ id, data, selected }) {
         placeholder="Введите выражение"
         style={{ width: '100%', border: '1px solid #ccc', borderRadius: 4, padding: 4, marginBottom: 8 }}
       />
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
         <span style={{ color: '#52c41a', fontWeight: 500 }}>✔ Соблюдено</span>
-        <span style={{ color: '#f5222d', fontWeight: 500 }}>✖ Не соблюдено</span>
+        <Handle type="source" position={Position.Right} id="true" style={{ top: 70, background: '#52c41a' }} />
       </div>
-      <Handle type="source" position={Position.Right} id="true" style={{ top: 60, background: '#52c41a' }} />
-      <Handle type="source" position={Position.Right} id="false" style={{ top: 90, background: '#f5222d' }} />
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+        <span style={{ color: '#f5222d', fontWeight: 500 }}>✖ Не соблюдено</span>
+        <Handle type="source" position={Position.Right} id="false" style={{ top: 100, background: '#f5222d' }} />
+      </div>
       <Handle type="target" position={Position.Left} />
     </div>
   );
@@ -371,7 +373,7 @@ function DataWriteNode({ id, data, selected }) {
     }}>
       <button
         onClick={() => deleteNode(id)}
-        style={{ position: 'absolute', top: 4, right: 4, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18 }}
+        style={{ position: 'absolute', top: -10, right: -10, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18 }}
         title="Удалить"
       >🗑️</button>
       <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Запись данных</div>
