@@ -8,12 +8,15 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
 django.setup()
 
 from apps.scenarios.models import Scenario
-
+from apps.bots.models import Bot
 
 
 @sync_to_async
-def get_first_scenario():
-    return Scenario.objects.first()
+def get_scenario_by_bot(bot_id):
+    return Scenario.objects.get(bots__id=bot_id)
+
+def get_bot_by_id(bot_id):
+    return Bot.objects.get(id=bot_id)
 
 @sync_to_async
 def get_scenario_by_id(scenario_id):

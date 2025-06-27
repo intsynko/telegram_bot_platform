@@ -29,7 +29,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def run_scenario(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.user_data.get('scenario_id'):
-        scenario = await django_client.get_first_scenario()
+        id = os.environ.get("BOT_ID")
+        scenario = await django_client.get_scenario_by_bot(id)
         if not scenario:
             await update.message.reply_text('Нет доступных сценариев.')
             return ConversationHandler.END
@@ -109,14 +110,14 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await run_scenario(update, context)
 
 
-def run_telegram_bot(token, id):
-    application = Application.builder().token(token).build()
+def run_telegram_bot():
+    id = os.environ.get("BOT_ID")
+    bot = django_client.get_bot_by_id(id)
+    application = Application.builder().token(bot.token).build()
     application.add_handler(CommandHandler('start', start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND | filters.CONTACT, run_scenario))
     application.run_polling()
 
 
 if __name__ == '__main__':
-    id = os.environ.get("BOT_ID")
-    token = os.environ.get("BOT_TOKEN")
-    run_telegram_bot(token, id)
+    run_telegram_bot()
