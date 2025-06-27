@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from apps.bots.models import Bot
 from apps.bots.serializers import BotSerializer, BotReadSerializer
+from apps.bots.bot_manager import start_bot, stop_bot
 
 
 class BotViewSet(viewsets.ModelViewSet):
@@ -29,9 +30,10 @@ class BotViewSet(viewsets.ModelViewSet):
         Run bot
         """
         bot = self.get_object()
-        # bot.is_running = True
-        # bot.save()
-        return Response({"success": True})
+        if not bot.scenario:
+            return Response({"error": "No scenario selected"}, status=400)
+        started = start_bot(bot.id)
+        return Response({"success": started})
 
     @action(methods=["post"], detail=True)
     def stop(self, request: Request, **kwargs) -> Response:
@@ -39,6 +41,5 @@ class BotViewSet(viewsets.ModelViewSet):
         Stop bot
         """
         bot = self.get_object()
-        # bot.is_running = False
-        # bot.save()
-        return Response({"success": True})
+        stopped = stop_bot(bot.id)
+        return Response({"success": stopped})
