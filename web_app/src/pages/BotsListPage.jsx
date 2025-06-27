@@ -62,6 +62,7 @@ export default function BotsListPage({ user }) {
   const [modalBot, setModalBot] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [scenarios, setScenarios] = useState([]);
+  const [runningBots, setRunningBots] = useState(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -98,6 +99,70 @@ export default function BotsListPage({ user }) {
       headers: { 'X-CSRFToken': csrfToken },
     });
     setBots(bots => bots.filter(b => b.id !== id));
+  };
+
+  const handleRunBot = async (botId) => {
+    const csrfToken = getCookie('csrftoken');
+    setRunningBots(prev => new Set([...prev, botId]));
+    
+    try {
+      const response = await fetch(`http://localhost:8000/api/bots/${botId}/run/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': csrfToken },
+      });
+      
+      if (response.ok) {
+        // Обновляем состояние бота в списке
+        setBots(prevBots => 
+          prevBots.map(bot => 
+            bot.id === botId ? { ...bot, is_running: true } : bot
+          )
+        );
+      } else {
+        alert('Ошибка запуска бота');
+      }
+    } catch (error) {
+      alert('Ошибка запуска бота');
+    } finally {
+      setRunningBots(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(botId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleStopBot = async (botId) => {
+    const csrfToken = getCookie('csrftoken');
+    setRunningBots(prev => new Set([...prev, botId]));
+    
+    try {
+      const response = await fetch(`http://localhost:8000/api/bots/${botId}/stop/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': csrfToken },
+      });
+      
+      if (response.ok) {
+        // Обновляем состояние бота в списке
+        setBots(prevBots => 
+          prevBots.map(bot => 
+            bot.id === botId ? { ...bot, is_running: false } : bot
+          )
+        );
+      } else {
+        alert('Ошибка остановки бота');
+      }
+    } catch (error) {
+      alert('Ошибка остановки бота');
+    } finally {
+      setRunningBots(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(botId);
+        return newSet;
+      });
+    }
   };
 
   const handleSave = async (botData) => {
@@ -150,8 +215,41 @@ export default function BotsListPage({ user }) {
             <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>{bot.name}</div>
             <div style={{ color: '#888', marginBottom: 8 }}>{bot.description || 'Без описания'}</div>
             <div style={{ fontSize: 14, marginBottom: 4 }}><b>Токен:</b> {bot.token}</div>
-            <div style={{ fontSize: 14, marginBottom: 12 }}><b>Сценарий:</b> {bot.scenario.name || 'Не выбран'}</div>
-            <div style={{ marginTop: 'auto', display: 'flex', gap: 8 }}>
+            <div style={{ fontSize: 14, marginBottom: 12 }}><b>Сценарий:</b> {bot.scenario?.name || 'Не выбран'}</div>
+            <div style={{ marginTop: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {bot.is_running ? (
+                <button 
+                  onClick={() => handleStopBot(bot.id)} 
+                  disabled={runningBots.has(bot.id)}
+                  style={{ 
+                    padding: '4px 12px', 
+                    borderRadius: 4, 
+                    border: '1px solid #f5222d', 
+                    background: '#f5222d', 
+                    color: '#fff', 
+                    cursor: runningBots.has(bot.id) ? 'not-allowed' : 'pointer',
+                    opacity: runningBots.has(bot.id) ? 0.7 : 1
+                  }}
+                >
+                  {runningBots.has(bot.id) ? '...' : 'Stop'}
+                </button>
+              ) : (
+                <button 
+                  onClick={() => handleRunBot(bot.id)} 
+                  disabled={runningBots.has(bot.id)}
+                  style={{ 
+                    padding: '4px 12px', 
+                    borderRadius: 4, 
+                    border: '1px solid #52c41a', 
+                    background: '#52c41a', 
+                    color: '#fff', 
+                    cursor: runningBots.has(bot.id) ? 'not-allowed' : 'pointer',
+                    opacity: runningBots.has(bot.id) ? 0.7 : 1
+                  }}
+                >
+                  {runningBots.has(bot.id) ? '...' : 'Play'}
+                </button>
+              )}
               <button onClick={() => openModal(bot)} style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid #1890ff', background: '#fff', color: '#1890ff', cursor: 'pointer' }}>Редактировать</button>
               <button onClick={() => handleDelete(bot.id)} style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid #f5222d', background: '#fff', color: '#f5222d', cursor: 'pointer' }}>Удалить</button>
             </div>

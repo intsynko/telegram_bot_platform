@@ -12,9 +12,13 @@ class ScenarioSerializer(serializers.ModelSerializer):
 class BotReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bot
-        fields = ['id', 'name', 'token', 'scenario']
+        fields = ['id', 'name', 'token', 'scenario', 'is_running']
 
     scenario = ScenarioSerializer()
+    is_running = serializers.SerializerMethodField()
+
+    def get_is_running(self, obj: Bot):
+        return False
 
 
 class BotSerializer(serializers.ModelSerializer):
