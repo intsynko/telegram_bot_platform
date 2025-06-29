@@ -83,6 +83,13 @@ function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges }) {
         >
           📝 Запись данных
         </div>
+        <div
+          style={{ marginBottom: 10, padding: 10, background: '#fff', borderRadius: 6, cursor: 'grab', border: '1px solid #bbb' }}
+          draggable
+          onDragStart={e => onDragStart(e, "notification")}
+        >
+          🛎️ Уведомление
+        </div>
       </div>
     </aside>
   );
@@ -401,6 +408,86 @@ function DataWriteNode({ id, data, selected }) {
   );
 }
 
+// --- НОДА УВЕДОМЛЕНИЯ ---
+function NotificationNode({ id, data, selected }) {
+  const { updateNode, deleteNode } = data;
+  const [type, setType] = React.useState(data.type || 'telegram');
+  const [chatId, setChatId] = React.useState(data.chat_id || '');
+  const [email, setEmail] = React.useState(data.email || '');
+  const [subject, setSubject] = React.useState(data.subject || '');
+  const [message, setMessage] = React.useState(data.message || '');
+
+  React.useEffect(() => {
+    updateNode(id, { type, chat_id: chatId, email, subject, message });
+    // eslint-disable-next-line
+  }, [type, chatId, email, subject, message]);
+
+  return (
+    <div style={{
+      minWidth: 220,
+      background: selected ? '#fffbe6' : '#fff',
+      border: '2px solid #f5b041',
+      borderRadius: 8,
+      padding: 10,
+      position: 'relative'
+    }}>
+      <button
+        onClick={() => deleteNode(id)}
+        style={{ position: 'absolute', top: -10, right: -10, border: 'none', background: 'none', cursor: 'pointer', color: '#f5222d', fontSize: 18, zIndex: 2 }}
+        title="Удалить"
+      >🗑️</button>
+      <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Уведомление</div>
+      <label style={{ fontWeight: 500 }}>Тип:</label>
+      <select value={type} onChange={e => setType(e.target.value)} style={{ width: '100%', marginBottom: 8 }}>
+        <option value="telegram">Telegram</option>
+        <option value="email">Email</option>
+      </select>
+      {type === 'telegram' && (
+        <>
+          <label>Chat ID:</label>
+          <input
+            type="text"
+            value={chatId}
+            onChange={e => setChatId(e.target.value)}
+            placeholder="Введите chat_id"
+            style={{ width: '100%', marginBottom: 8, border: '1px solid #ccc', borderRadius: 4, padding: 4 }}
+          />
+        </>
+      )}
+      {type === 'email' && (
+        <>
+          <label>Email:</label>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="Введите email"
+            style={{ width: '100%', marginBottom: 8, border: '1px solid #ccc', borderRadius: 4, padding: 4 }}
+          />
+          <label>Subject:</label>
+          <input
+            type="text"
+            value={subject}
+            onChange={e => setSubject(e.target.value)}
+            placeholder="Тема письма"
+            style={{ width: '100%', marginBottom: 8, border: '1px solid #ccc', borderRadius: 4, padding: 4 }}
+          />
+        </>
+      )}
+      <label>Текст сообщения:</label>
+      <textarea
+        value={message}
+        onChange={e => setMessage(e.target.value)}
+        placeholder="Введите текст сообщения"
+        rows={4}
+        style={{ width: '100%', border: '1px solid #ccc', borderRadius: 4, padding: 4, marginBottom: 4 }}
+      />
+      <Handle type="source" position={Position.Right} />
+      <Handle type="target" position={Position.Left} />
+    </div>
+  );
+}
+
 const nodeTypes = {
   form: FormNode,
   menu: MenuNode,
@@ -408,6 +495,7 @@ const nodeTypes = {
   message: MessageNode,
   condition: ConditionNode,
   datawrite: DataWriteNode,
+  notification: NotificationNode,
 };
 
 function FlowCanvas() {
@@ -491,6 +579,13 @@ function FlowCanvas() {
         type: 'datawrite',
         position,
         data: { pairs: [] },
+      };
+    } else if (type === 'notification') {
+      node = {
+        id: uuidv4(),
+        type: 'notification',
+        position,
+        data: { type: 'telegram', chat_id: '', message: '' },
       };
     }
     if (node) setNodes(nds => nds.concat(node));

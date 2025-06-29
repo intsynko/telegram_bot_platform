@@ -14,6 +14,7 @@ from telegram_client.logic.graph import (
     get_node_by_id,
     get_next_node_id_by_source_id
 )
+from telegram_client.logic.system_bot import TelegramConnector
 
 logging.basicConfig(
     level=logging.INFO
@@ -61,6 +62,15 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'], condition_value=True)
         else:
             context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'], condition_value=False)
+        return await ask_next_question(update, context)
+    if node["type"] == "notification":
+        text = format_str(node["data"]["message"], context.user_data['answers'])
+        if node["data"]["type"] == 'telegram':
+            tg_connector = TelegramConnector(os.environ.get("SYSTEM_BOT_TOKEN"), node["data"]["chat_id"])
+            tg_connector.send_message(text)
+        elif node["data"]["type"] == 'email':
+            pass
+        context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
         return await ask_next_question(update, context)
     if node["type"] == 'datawrite':
         for pair in node["data"]["pairs"]:
