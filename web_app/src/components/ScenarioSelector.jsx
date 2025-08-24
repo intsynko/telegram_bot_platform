@@ -58,7 +58,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
   // Загрузка сценариев
   const fetchScenarios = useCallback(() => {
     setScenariosLoading(true);
-    fetch('http://localhost:8000/api/scenarios/', { credentials: 'include' })
+    fetch('http://79.174.93.201:8000/api/scenarios/', { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setScenarios(data);
@@ -75,7 +75,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
   // Подгрузка graph при смене сценария
   useEffect(() => {
     if (!currentScenario) return;
-    fetch(`http://localhost:8000/api/scenarios/${currentScenario}/`, { credentials: 'include' })
+    fetch(`http://79.174.93.201:8000/api/scenarios/${currentScenario}/`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data.graph) {
@@ -98,7 +98,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
   const handleCreateScenario = async (name) => {
     const csrfToken = getCookie('csrftoken');
     setCreateScenarioLoading(true);
-    await fetch('http://localhost:8000/api/scenarios/', {
+    await fetch('http://79.174.93.201:8000/api/scenarios/', {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -118,7 +118,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
     const csrfToken = getCookie('csrftoken');
     const graph = JSON.stringify({ nodes, edges });
     try {
-      const resp = await fetch(`http://localhost:8000/api/scenarios/${currentScenario}/`, {
+      const resp = await fetch(`http://79.174.93.201:8000/api/scenarios/${currentScenario}/`, {
         method: 'PATCH',
         credentials: 'include',
         headers: {

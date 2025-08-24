@@ -67,7 +67,7 @@ export default function BotsListPage({ user }) {
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-    fetch('http://localhost:8000/api/bots/', {
+    fetch('http://79.174.93.201:8000/api/bots/', {
       credentials: 'include',
     })
       .then(res => res.json())
@@ -83,7 +83,7 @@ export default function BotsListPage({ user }) {
 
   const openModal = async (bot = null) => {
     // Получить сценарии
-    const resp = await fetch('http://localhost:8000/api/scenarios/', { credentials: 'include' });
+    const resp = await fetch('http://79.174.93.201:8000/api/scenarios/', { credentials: 'include' });
     const data = await resp.json();
     setScenarios(data);
     setModalBot(bot);
@@ -93,7 +93,7 @@ export default function BotsListPage({ user }) {
   const handleDelete = async (id) => {
     if (!window.confirm('Удалить бота?')) return;
     const csrfToken = getCookie('csrftoken');
-    await fetch(`http://localhost:8000/api/bots/${id}/`, {
+    await fetch(`http://79.174.93.201:8000/api/bots/${id}/`, {
       method: 'DELETE',
       credentials: 'include',
       headers: { 'X-CSRFToken': csrfToken },
@@ -106,7 +106,7 @@ export default function BotsListPage({ user }) {
     setRunningBots(prev => new Set([...prev, botId]));
     
     try {
-      const response = await fetch(`http://localhost:8000/api/bots/${botId}/run/`, {
+      const response = await fetch(`http://79.174.93.201:8000/api/bots/${botId}/run/`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'X-CSRFToken': csrfToken },
@@ -138,7 +138,7 @@ export default function BotsListPage({ user }) {
     setRunningBots(prev => new Set([...prev, botId]));
     
     try {
-      const response = await fetch(`http://localhost:8000/api/bots/${botId}/stop/`, {
+      const response = await fetch(`http://79.174.93.201:8000/api/bots/${botId}/stop/`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'X-CSRFToken': csrfToken },
@@ -170,8 +170,8 @@ export default function BotsListPage({ user }) {
     const csrfToken = getCookie('csrftoken');
     const isEdit = !!modalBot;
     const url = isEdit
-      ? `http://localhost:8000/api/bots/${modalBot.id}/`
-      : 'http://localhost:8000/api/bots/';
+      ? `http://79.174.93.201:8000/api/bots/${modalBot.id}/`
+      : 'http://79.174.93.201:8000/api/bots/';
     const method = isEdit ? 'PATCH' : 'POST';
     const resp = await fetch(url, {
       method,

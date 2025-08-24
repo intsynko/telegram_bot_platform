@@ -22,7 +22,7 @@ export default function Header({ user, setUser }) {
   // Логаут
   const handleLogout = async () => {
     const csrfToken = getCookie('csrftoken');
-    await fetch('http://localhost:8000/api/users/auth/logout/', {
+    await fetch('http://79.174.93.201:8000/api/users/auth/logout/', {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -30,7 +30,7 @@ export default function Header({ user, setUser }) {
       },
     });
     // Проверяем, реально ли разлогинились
-    const res = await fetch('http://localhost:8000/api/users/auth/user/', {
+    const res = await fetch('http://79.174.93.201:8000/api/users/auth/user/', {
       credentials: 'include',
     });
     if (!res.ok) {

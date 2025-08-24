@@ -16,7 +16,7 @@ export default function AuthModal({ open, onClose, setUser }) {
 
   useEffect(() => {
     if (open) {
-      fetch('http://localhost:8000/api/csrf/', {
+      fetch('http://79.174.93.201:8000/api/csrf/', {
         credentials: 'include',
       }).then(() => {
         const token = getCookie('csrftoken');
@@ -33,8 +33,8 @@ export default function AuthModal({ open, onClose, setUser }) {
     setError('');
     try {
       const url = tab === 'login'
-        ? 'http://localhost:8000/api/users/auth/login/'
-        : 'http://localhost:8000/api/users/auth/register/';
+        ? 'http://79.174.93.201:8000/api/users/auth/login/'
+        : 'http://79.174.93.201:8000/api/users/auth/register/';
       const resp = await fetch(url, {
         method: 'POST',
         headers: {

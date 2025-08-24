@@ -12,7 +12,7 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/users/auth/user/', {
+    fetch('http://http://79.174.93.20:8000/api/users/auth/user/', {
       credentials: 'include',
     })
       .then(res => res.ok ? res.json() : null)
