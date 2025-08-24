@@ -10,7 +10,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Copy source code
-COPY .
+COPY . .
 
 # Build the app
 RUN npm run build
