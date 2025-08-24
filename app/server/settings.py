@@ -25,7 +25,9 @@ environ.Env.read_env(f'{BASE_DIR}/.env')
 
 SECRET_KEY = env.str('SECRET_KEY', default='dv7_vg+yan&j+6l8aicz^3#k@#w7dz*fbw%44%*==a#uiboh*4')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'http://79.174.93.201'
+]
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
