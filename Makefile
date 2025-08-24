@@ -10,6 +10,7 @@ clear_space:
 build:
 	git pull
 	docker compose build web
+	docker compose build frontend
 
 release:
 	make build

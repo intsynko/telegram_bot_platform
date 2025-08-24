@@ -13,7 +13,7 @@ def start_bot(bot_id):
     my_env["BOT_ID"] = str(bot_id)
 
     # Запуск через subprocess (можно через threading, если бот — функция)
-    proc = subprocess.Popen(["python", "telegram_client/app.py"], env=my_env)
+    proc = subprocess.Popen(["python", "telegram_client/app.py"], cwd="app/", env=my_env)
     bot_processes[bot_id] = proc
     return True
 

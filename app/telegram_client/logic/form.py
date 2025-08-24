@@ -38,21 +38,21 @@ async def ask_form_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = ReplyKeyboardMarkup([
             [KeyboardButton('Да'), KeyboardButton('Нет')]
         ], one_time_keyboard=True, resize_keyboard=True)
-        await update.message.reply_text(f"{field["name"]} (Да/Нет):", reply_markup=keyboard)
+        await update.message.reply_text(f"{field['name']} (Да/Нет):", reply_markup=keyboard)
         return ASKING
     # LIST: варианты ответа
     elif field["type"] == 'list':
         # Предполагаем, что варианты ответа хранятся в field.default_value через запятую
         options = [opt.strip() for opt in (field.get("default_value") or '').split(',') if opt.strip()]
         if not options:
-            await update.message.reply_text(f"{field["name"]} (нет вариантов)")
+            await update.message.reply_text(f"{field['name']} (нет вариантов)")
             context.user_data['field_idx'] += 1
             return await ask_form_field(update, context)
         keyboard = ReplyKeyboardMarkup(
             [[KeyboardButton(opt)] for opt in options],
             one_time_keyboard=True, resize_keyboard=True
         )
-        await update.message.reply_text(f"{field["name"]} (выберите вариант):", reply_markup=keyboard)
+        await update.message.reply_text(f"{field['name']} (выберите вариант):", reply_markup=keyboard)
         return ASKING
     # PHONE: кнопка для отправки номера
     elif field["type"] == 'phone':
@@ -60,10 +60,10 @@ async def ask_form_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [[KeyboardButton('Отправить номер', request_contact=True)]],
             one_time_keyboard=True, resize_keyboard=True
         )
-        await update.message.reply_text(f"{field["name"]} (отправьте номер):", reply_markup=keyboard)
+        await update.message.reply_text(f"{field['name']} (отправьте номер):", reply_markup=keyboard)
         return ASKING
     else:
-        await update.message.reply_text(f"{field["name"]}:", reply_markup=ForceReply())
+        await update.message.reply_text(f"{field['name']}:", reply_markup=ForceReply())
         return ASKING
 
 

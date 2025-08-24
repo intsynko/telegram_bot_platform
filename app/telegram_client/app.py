@@ -5,6 +5,9 @@ import os
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 
+import sys
+sys.path.append(os.getcwd())
+
 from telegram_client import django_client
 
 from telegram_client.logic.conditions import check_condition, format_str
