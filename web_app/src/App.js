@@ -7,12 +7,13 @@ import BotsListPage from './pages/BotsListPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
+import { BASE_URL } from "./config";
 
 function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch('http://79.174.93.20:8000/api/users/auth/user/', {
+    fetch(`${BASE_URL}/api/users/auth/user/`, {
       credentials: 'include',
     })
       .then(res => res.ok ? res.json() : null)

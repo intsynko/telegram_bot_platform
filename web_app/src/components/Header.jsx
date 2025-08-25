@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AuthModal from './AuthModal';
+import { BASE_URL } from "../config";
 
 export default function Header({ user, setUser }) {
   const [showAuth, setShowAuth] = useState(false);
@@ -22,7 +23,7 @@ export default function Header({ user, setUser }) {
   // Логаут
   const handleLogout = async () => {
     const csrfToken = getCookie('csrftoken');
-    await fetch('http://79.174.93.201:8000/api/users/auth/logout/', {
+    await fetch(`${BASE_URL}/api/users/auth/logout/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -30,7 +31,7 @@ export default function Header({ user, setUser }) {
       },
     });
     // Проверяем, реально ли разлогинились
-    const res = await fetch('http://79.174.93.201:8000/api/users/auth/user/', {
+    const res = await fetch(`${BASE_URL}/api/users/auth/user/`, {
       credentials: 'include',
     });
     if (!res.ok) {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BASE_URL } from "../config";
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -16,12 +17,12 @@ export default function AuthModal({ open, onClose, setUser }) {
 
   useEffect(() => {
     if (open) {
-      fetch('http://79.174.93.201:8000/api/csrf/', {
-        credentials: 'include',
-      }).then(() => {
-        const token = getCookie('csrftoken');
-        setCsrfToken(token || '');
-      });
+//       fetch(`${BASE_URL}/api/csrf/`, {
+//         credentials: 'include',
+//       }).then(() => {
+//         const token = getCookie('csrftoken');
+//         setCsrfToken(token || '');
+//       });
     }
   }, [open]);
 
@@ -33,8 +34,8 @@ export default function AuthModal({ open, onClose, setUser }) {
     setError('');
     try {
       const url = tab === 'login'
-        ? 'http://79.174.93.201:8000/api/users/auth/login/'
-        : 'http://79.174.93.201:8000/api/users/auth/register/';
+        ? `${BASE_URL}/api/users/auth/login/`
+        : `${BASE_URL}/api/users/auth/register/`;
       const resp = await fetch(url, {
         method: 'POST',
         headers: {

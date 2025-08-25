@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import { BASE_URL } from "../config";
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -58,7 +59,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
   // Загрузка сценариев
   const fetchScenarios = useCallback(() => {
     setScenariosLoading(true);
-    fetch('http://79.174.93.201:8000/api/scenarios/', { credentials: 'include' })
+    fetch(`${BASE_URL}/api/scenarios/`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setScenarios(data);
@@ -75,7 +76,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
   // Подгрузка graph при смене сценария
   useEffect(() => {
     if (!currentScenario) return;
-    fetch(`http://79.174.93.201:8000/api/scenarios/${currentScenario}/`, { credentials: 'include' })
+    fetch(`${BASE_URL}/api/scenarios/${currentScenario}/`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data.graph) {
@@ -98,7 +99,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
   const handleCreateScenario = async (name) => {
     const csrfToken = getCookie('csrftoken');
     setCreateScenarioLoading(true);
-    await fetch('http://79.174.93.201:8000/api/scenarios/', {
+    await fetch(`${BASE_URL}/api/scenarios/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -118,7 +119,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
     const csrfToken = getCookie('csrftoken');
     const graph = JSON.stringify({ nodes, edges });
     try {
-      const resp = await fetch(`http://79.174.93.201:8000/api/scenarios/${currentScenario}/`, {
+      const resp = await fetch(`${BASE_URL}/api/scenarios/${currentScenario}/`, {
         method: 'PATCH',
         credentials: 'include',
         headers: {

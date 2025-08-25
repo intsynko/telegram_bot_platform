@@ -27,6 +27,7 @@ SECRET_KEY = env.str('SECRET_KEY', default='dv7_vg+yan&j+6l8aicz^3#k@#w7dz*fbw%4
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
+    'localhost',
     '79.174.93.201',
 ]
 
@@ -35,15 +36,9 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://79.174.93.201',
-    'http://79.174.93.201:80',
-    'http://79.174.93.201:8000',
-    'http://79.174.93.201',
 ]
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
-    'http://79.174.93.201',
-    'http://79.174.93.201:80',
-    'http://79.174.93.201:8000',
     'http://79.174.93.201',
 ]
 
