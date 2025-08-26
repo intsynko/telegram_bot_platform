@@ -1,58 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { BASE_URL } from "../config";
+import BotModal from '../components/BotModal';
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop().split(';').shift();
-}
-
-// Модалка для создания/редактирования бота
-function BotModal({ open, onClose, onSave, bot, scenarios, loading }) {
-  const [name, setName] = useState(bot?.name || '');
-  const [token, setToken] = useState(bot?.token || '');
-  const [description, setDescription] = useState(bot?.description || '');
-  const [scenario, setScenario] = useState(bot?.scenario?.id || '');
-
-  useEffect(() => {
-    setName(bot?.name || '');
-    setToken(bot?.token || '');
-    setDescription(bot?.description || '');
-    setScenario(bot?.scenario?.id || '');
-  }, [bot, open]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave({
-      name,
-      token,
-      description,
-      scenario,
-    });
-  };
-
-  if (!open) return null;
-  return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-      background: 'rgba(0,0,0,0.25)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
-    }}>
-      <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 10, padding: 32, minWidth: 340, boxShadow: '0 4px 24px rgba(0,0,0,0.10)', position: 'relative' }}>
-        <button onClick={onClose} type="button" style={{ position: 'absolute', top: 12, right: 18, background: 'none', border: 'none', fontSize: 22, color: '#888', cursor: 'pointer', zIndex: 2 }} title="Закрыть">×</button>
-        <h3>{bot ? 'Редактировать бота' : 'Создать бота'}</h3>
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="Имя" required style={{ width: '100%', marginBottom: 12, padding: 8 }} />
-        <input value={token} onChange={e => setToken(e.target.value)} placeholder="Токен" required style={{ width: '100%', marginBottom: 12, padding: 8 }} />
-        <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Описание" style={{ width: '100%', marginBottom: 12, padding: 8 }} />
-        <select value={scenario} onChange={e => setScenario(e.target.value)} required style={{ width: '100%', marginBottom: 18, padding: 8 }}>
-          <option value="">Выберите сценарий</option>
-          {scenarios.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: 10, borderRadius: 6, background: '#1890ff', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-          {loading ? '...' : (bot ? 'Сохранить' : 'Создать')}
-        </button>
-      </form>
-    </div>
-  );
 }
 
 export default function BotsListPage({ user }) {
@@ -107,14 +60,12 @@ export default function BotsListPage({ user }) {
     setRunningBots(prev => new Set([...prev, botId]));
     
     try {
-      const response = await fetch(`${BASE_URL}/api/bots/${botId}/run/`, {
+      const resp = await fetch(`${BASE_URL}/api/bots/${botId}/run/`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'X-CSRFToken': csrfToken },
       });
-      
-      if (response.ok) {
-        // Обновляем состояние бота в списке
+      if (resp.ok) {
         setBots(prevBots => 
           prevBots.map(bot => 
             bot.id === botId ? { ...bot, is_running: true } : bot
@@ -139,14 +90,12 @@ export default function BotsListPage({ user }) {
     setRunningBots(prev => new Set([...prev, botId]));
     
     try {
-      const response = await fetch(`${BASE_URL}/api/bots/${botId}/stop/`, {
+      const resp = await fetch(`${BASE_URL}/api/bots/${botId}/stop/`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'X-CSRFToken': csrfToken },
       });
-      
-      if (response.ok) {
-        // Обновляем состояние бота в списке
+      if (resp.ok) {
         setBots(prevBots => 
           prevBots.map(bot => 
             bot.id === botId ? { ...bot, is_running: false } : bot
@@ -198,25 +147,73 @@ export default function BotsListPage({ user }) {
     setModalLoading(false);
   };
 
+  const handleCreateScenario = () => {
+    // Закрываем модалку бота и переходим к созданию сценария
+    setModalOpen(false);
+    // Здесь можно добавить навигацию к созданию сценария
+    // Например, открыть модалку создания сценария или перейти на страницу сценариев
+    window.open('/scenarios/templates', '_blank');
+  };
+
   if (!user) return <div style={{ margin: 40, textAlign: 'center' }}>Войдите, чтобы просматривать ботов.</div>;
   if (loading) return <div style={{ margin: 40, textAlign: 'center' }}>Загрузка...</div>;
   if (error) return <div style={{ margin: 40, color: 'red', textAlign: 'center' }}>{error}</div>;
 
   return (
     <div style={{ maxWidth: 900, margin: '40px auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2>Мои боты</h2>
-        <button onClick={() => openModal(null)} style={{ padding: '8px 18px', borderRadius: 6, background: '#1890ff', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}>
-          + Новый бот
-        </button>
-      </div>
+      <h2 style={{ marginBottom: 24 }}>Мои боты</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+        {/* Карточка для создания нового бота */}
+        <div 
+          onClick={() => openModal(null)}
+          style={{ 
+            background: '#f0f8ff', 
+            border: '2px dashed #1890ff', 
+            borderRadius: 10, 
+            padding: 40, 
+            textAlign: 'center', 
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 200
+          }}
+          onMouseEnter={(e) => e.target.style.background = '#e6f7ff'}
+          onMouseLeave={(e) => e.target.style.background = '#f0f8ff'}
+        >
+          <div style={{ fontSize: 48, color: '#1890ff', marginBottom: 16 }}>+</div>
+          <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8, color: '#1890ff' }}>Создать нового бота</div>
+          <div style={{ color: '#666', fontSize: 14 }}>Добавить нового Telegram бота</div>
+        </div>
+        
         {bots.map(bot => (
           <div key={bot.id} style={{ background: '#f7f7f7', borderRadius: 10, padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', position: 'relative' }}>
-            <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>{bot.name}</div>
+            <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>
+              <a 
+                href={`https://t.me/${bot.name.replace('@', '')}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ 
+                  color: '#1890ff', 
+                  textDecoration: 'none',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+              >
+                {bot.name}
+              </a>
+            </div>
             <div style={{ color: '#888', marginBottom: 8 }}>{bot.description || 'Без описания'}</div>
             <div style={{ fontSize: 14, marginBottom: 4 }}><b>Токен:</b> {bot.token}</div>
-            <div style={{ fontSize: 14, marginBottom: 12 }}><b>Сценарий:</b> {bot.scenario?.name || 'Не выбран'}</div>
+            <div style={{ fontSize: 14, marginBottom: 12 }}>
+              <b>Сценарий:</b> 
+              <span style={{ color: bot.scenario ? '#333' : '#f5222d', fontWeight: bot.scenario ? 'normal' : '500' }}>
+                {bot.scenario?.name || 'Не выбран'}
+              </span>
+            </div>
             <div style={{ marginTop: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {bot.is_running ? (
                 <button 
@@ -237,27 +234,37 @@ export default function BotsListPage({ user }) {
               ) : (
                 <button 
                   onClick={() => handleRunBot(bot.id)} 
-                  disabled={runningBots.has(bot.id)}
+                  disabled={runningBots.has(bot.id) || !bot.scenario}
                   style={{ 
                     padding: '4px 12px', 
                     borderRadius: 4, 
                     border: '1px solid #52c41a', 
                     background: '#52c41a', 
                     color: '#fff', 
-                    cursor: runningBots.has(bot.id) ? 'not-allowed' : 'pointer',
-                    opacity: runningBots.has(bot.id) ? 0.7 : 1
+                    cursor: (runningBots.has(bot.id) || !bot.scenario) ? 'not-allowed' : 'pointer',
+                    opacity: (runningBots.has(bot.id) || !bot.scenario) ? 0.7 : 1
                   }}
+                  title={!bot.scenario ? 'Для запуска бота необходимо выбрать сценарий' : ''}
                 >
                   {runningBots.has(bot.id) ? '...' : 'Play'}
                 </button>
               )}
+              
               <button onClick={() => openModal(bot)} style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid #1890ff', background: '#fff', color: '#1890ff', cursor: 'pointer' }}>Редактировать</button>
               <button onClick={() => handleDelete(bot.id)} style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid #f5222d', background: '#fff', color: '#f5222d', cursor: 'pointer' }}>Удалить</button>
             </div>
           </div>
         ))}
       </div>
-      <BotModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSave} bot={modalBot} scenarios={scenarios} loading={modalLoading} />
+      <BotModal 
+        open={modalOpen} 
+        onClose={() => setModalOpen(false)} 
+        onSave={handleSave} 
+        bot={modalBot} 
+        scenarios={scenarios} 
+        loading={modalLoading} 
+        onCreateScenario={handleCreateScenario} 
+      />
     </div>
   );
 } 
