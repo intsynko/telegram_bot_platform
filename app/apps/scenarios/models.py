@@ -5,6 +5,7 @@ class Scenario(models.Model):
     name = models.CharField(max_length=255)
     owner = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='scenatios', null=True)
     graph = models.JSONField(blank=True, null=True)
+    is_template = models.BooleanField("Является шаблоном", default=False, null=False)
 
     def __str__(self):
         return self.name

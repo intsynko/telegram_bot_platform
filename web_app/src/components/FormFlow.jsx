@@ -27,7 +27,7 @@ const FIELD_TYPES = [
 ];
 
 // --- СЛЕВА ПАНЕЛЬ ---
-function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges }) {
+function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges, scenarioId, shouldCreate }) {
   const [showLoadModal, setShowLoadModal] = useState(false);
 
   return (
@@ -38,6 +38,8 @@ function Sidebar({ onDragStart, nodes, edges, setNodes, setEdges }) {
         edges={edges}
         setNodes={setNodes}
         setEdges={setEdges}
+        scenarioId={scenarioId}
+        shouldCreate={shouldCreate}
       />
       {/* Элементы для перетаскивания */}
       <div style={{ borderTop: '1px solid #eee', paddingTop: 14, marginTop: 10 }}>
@@ -498,7 +500,7 @@ const nodeTypes = {
   notification: NotificationNode,
 };
 
-function FlowCanvas() {
+function FlowCanvas({ scenarioId, shouldCreate }) {
   const reactFlowWrapper = useRef(null);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
@@ -622,6 +624,8 @@ function FlowCanvas() {
         edges={edges}
         setNodes={setNodes}
         setEdges={setEdges}
+        scenarioId={scenarioId}
+        shouldCreate={shouldCreate}
       />
       <div style={{ flex: 1, height: '100vh' }} ref={reactFlowWrapper}>
         <ReactFlow
@@ -652,10 +656,10 @@ function FlowCanvas() {
   );
 }
 
-export default function FormFlowApp() {
+export default function FormFlowApp({ scenarioId, shouldCreate }) {
   return (
     <ReactFlowProvider>
-      <FlowCanvas />
+      <FlowCanvas scenarioId={scenarioId} shouldCreate={shouldCreate} />
     </ReactFlowProvider>
   );
 }

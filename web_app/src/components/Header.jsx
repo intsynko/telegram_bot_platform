@@ -58,7 +58,8 @@ export default function Header({ user, setUser }) {
       <nav style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         {user ? (
           <>
-            <Link to="/scenarios" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Сценарии</Link>
+            {/* <Link to="/scenarios" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Сценарии</Link> */}
+            <Link to="/scenarios/templates" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Сценарии</Link>
             <Link to="/bots" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Боты</Link>
             <div style={{ position: 'relative', marginLeft: 16 }}>
               <button

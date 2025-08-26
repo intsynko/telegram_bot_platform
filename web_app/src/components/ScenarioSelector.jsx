@@ -45,33 +45,44 @@ function CreateScenarioModal({ open, onClose, onCreate, loading }) {
   );
 }
 
-export default function ScenarioSelector({ nodes = [], edges = [], setNodes, setEdges }) {
+export default function ScenarioSelector({ nodes = [], edges = [], setNodes, setEdges, scenarioId, shouldCreate }) {
   const [scenarios, setScenarios] = useState([]);
   const [currentScenario, setCurrentScenario] = useState('');
-  const [scenariosLoading, setScenariosLoading] = useState(false);
+  const [scenarioName, setScenarioName] = useState('');
   const [showCreateScenarioModal, setShowCreateScenarioModal] = useState(false);
   const [createScenarioLoading, setCreateScenarioLoading] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createLoading, setCreateLoading] = useState(false);
-  const [showSaveModal, setShowSaveModal] = useState(false);
   const csrfToken = getCookie('csrftoken') || '';
 
   // Загрузка сценариев
   const fetchScenarios = useCallback(() => {
-    setScenariosLoading(true);
     fetch(`${BASE_URL}/api/scenarios/`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setScenarios(data);
         if (data.length && !currentScenario) setCurrentScenario(data[0].id);
-        setScenariosLoading(false);
       })
-      .catch(() => setScenariosLoading(false));
+      .catch(() => {
+        // Обработка ошибки загрузки
+      });
   }, [currentScenario]);
 
   useEffect(() => {
     fetchScenarios();
   }, [fetchScenarios]);
+
+  // Устанавливаем scenarioId как текущий сценарий, если он передан
+  useEffect(() => {
+    if (scenarioId && scenarios.length > 0) {
+      setCurrentScenario(scenarioId);
+    }
+  }, [scenarioId, scenarios]);
+
+  // Автоматически открываем модалку создания сценария, если передан параметр shouldCreate
+  useEffect(() => {
+    if (shouldCreate) {
+      setShowCreateScenarioModal(true);
+    }
+  }, [shouldCreate]);
 
   // Подгрузка graph при смене сценария
   useEffect(() => {
@@ -79,6 +90,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
     fetch(`${BASE_URL}/api/scenarios/${currentScenario}/`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
+        setScenarioName(data.name || '');
         if (data.graph) {
           try {
             const graph = typeof data.graph === 'string' ? JSON.parse(data.graph) : data.graph;
@@ -99,18 +111,32 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
   const handleCreateScenario = async (name) => {
     const csrfToken = getCookie('csrftoken');
     setCreateScenarioLoading(true);
-    await fetch(`${BASE_URL}/api/scenarios/`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken,
-      },
-      body: JSON.stringify(name),
-    });
-    setShowCreateScenarioModal(false);
-    setCreateScenarioLoading(false);
-    fetchScenarios();
+    try {
+      const resp = await fetch(`${BASE_URL}/api/scenarios/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({ name }),
+      });
+      
+      if (resp.ok) {
+        const newScenario = await resp.json();
+        setCurrentScenario(newScenario.id);
+        setScenarioName(newScenario.name);
+        setShowCreateScenarioModal(false);
+        setCreateScenarioLoading(false);
+        fetchScenarios();
+      } else {
+        alert('Ошибка создания сценария');
+        setCreateScenarioLoading(false);
+      }
+    } catch (error) {
+      alert('Ошибка создания сценария');
+      setCreateScenarioLoading(false);
+    }
   };
 
   // Сохранение сценария
@@ -126,7 +152,10 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken,
         },
-        body: JSON.stringify({ graph }),
+        body: JSON.stringify({ 
+          graph,
+          name: scenarioName 
+        }),
       });
       if (resp.ok) {
         toast.success('Сценарий успешно сохранён!');
@@ -140,28 +169,32 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
 
   return (
     <div style={{ marginBottom: 18, padding: 10, background: '#fff', borderRadius: 6, border: '1px solid #bbb', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <label style={{ fontWeight: 500, marginBottom: 4 }}>Сценарий:</label>
-      <select
-        value={currentScenario}
-        onChange={e => setCurrentScenario(e.target.value)}
-        style={{ marginBottom: 6, padding: 4, borderRadius: 4, border: '1px solid #ccc' }}
-        disabled={scenariosLoading}
-      >
-        {scenariosLoading ? (
-          <option>Загрузка...</option>
-        ) : (
-          scenarios.map(s => <option key={s.id} value={s.id}>{s.name}</option>)
-        )}
-      </select>
-      <button
-        onClick={() => setShowCreateScenarioModal(true)}
-        style={{ padding: '4px 0', borderRadius: 4, border: '1px solid #1890ff', background: '#fff', color: '#1890ff', cursor: 'pointer', fontSize: 14 }}
-      >
-        + Создать сценарий
-      </button>
+      <label style={{ fontWeight: 500, marginBottom: 4 }}>Название сценария:</label>
+      <input
+        type="text"
+        value={scenarioName}
+        onChange={e => setScenarioName(e.target.value)}
+        placeholder="Введите название сценария"
+        style={{ 
+          marginBottom: 8, 
+          padding: '6px 8px', 
+          borderRadius: 4, 
+          border: '1px solid #ccc',
+          fontSize: 14
+        }}
+      />
       <button
         onClick={handleSaveScenario}
-        style={{ padding: '4px 0', borderRadius: 4, border: '1px solid #52c41a', background: '#fff', color: '#52c41a', cursor: 'pointer', fontSize: 14, marginTop: 8 }}
+        style={{ 
+          padding: '6px 0', 
+          borderRadius: 4, 
+          border: '1px solid #52c41a', 
+          background: '#fff', 
+          color: '#52c41a', 
+          cursor: 'pointer', 
+          fontSize: 14,
+          fontWeight: 500
+        }}
       >
         💾 Сохранить
       </button>
