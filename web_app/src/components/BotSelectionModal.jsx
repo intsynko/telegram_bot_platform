@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { BASE_URL } from "../config";
 
@@ -49,7 +50,7 @@ export default function BotSelectionModal({ open, onClose, onBotSelected, scenar
         method: 'POST',
         credentials: 'include',
         headers: {
-           'Content-Type': 'application/json',
+          'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken,
         },
         body: JSON.stringify({
@@ -133,7 +134,20 @@ export default function BotSelectionModal({ open, onClose, onBotSelected, scenar
           </div>
         ) : bots.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: '#666' }}>
-            У вас пока нет ботов. Сначала создайте бота в разделе "Боты".
+            У вас пока нет ботов. Сначала создайте бота в разделе{' '}
+            <Link 
+              to="/bots" 
+              style={{ 
+                color: '#1890ff', 
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+              onClick={onClose} // Закрываем модалку при переходе
+            >
+              "Боты"
+            </Link>
+            .
           </div>
         ) : (
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
