@@ -27,7 +27,7 @@ function App() {
     <Router>
       <Header user={user} setUser={setUser} />
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<LandingPage setUser={setUser} />} />
         <Route path="/scenarios" element={<ScenarioEditPage />} />
         <Route path="/scenarios/templates" element={<ScenariosPage user={user} />} />
         <Route path="/bots" element={<BotsListPage user={user} />} />

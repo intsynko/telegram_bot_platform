@@ -17,12 +17,8 @@ export default function AuthModal({ open, onClose, setUser }) {
 
   useEffect(() => {
     if (open) {
-//       fetch(`${BASE_URL}/api/csrf/`, {
-//         credentials: 'include',
-//       }).then(() => {
-//         const token = getCookie('csrftoken');
-//         setCsrfToken(token || '');
-//       });
+      const token = getCookie('csrftoken');
+      setCsrfToken(token || '');
     }
   }, [open]);
 
