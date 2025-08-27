@@ -17,7 +17,7 @@ class ScenariosViewSet(viewsets.ModelViewSet):
         if self.action == 'copy':
             qs = qs.filter(is_template=True)
         else:
-            qs = qs.filter(owner=self.request.user)
+            qs = qs.filter(owner=self.request.user, is_template=False)
         return qs
         # return Scenario.objects.filter(owner=self.request.user, is_template=False)
 
