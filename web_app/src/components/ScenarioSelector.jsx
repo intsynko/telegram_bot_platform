@@ -16,7 +16,7 @@ function CreateScenarioModal({ open, onClose, onCreate, loading }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (name.trim()) {
-      await onCreate({name});
+      await onCreate(name);
       setName('');
     }
   };

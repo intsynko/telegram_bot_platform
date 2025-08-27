@@ -12,6 +12,7 @@ export default function ScenariosPage({ user }) {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
   const [userScenarios, setUserScenarios] = useState([]);
+  const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCopyModal, setShowCopyModal] = useState(false);
@@ -22,15 +23,17 @@ export default function ScenariosPage({ user }) {
     if (!user) return;
     setLoading(true);
     
-    // Загружаем шаблоны и пользовательские сценарии параллельно
+    // Загружаем шаблоны, пользовательские сценарии и ботов параллельно
     Promise.all([
       fetch(`${BASE_URL}/api/scenarios/template/`, { credentials: 'include' }),
-      fetch(`${BASE_URL}/api/scenarios/`, { credentials: 'include' })
+      fetch(`${BASE_URL}/api/scenarios/`, { credentials: 'include' }),
+      fetch(`${BASE_URL}/api/bots/`, { credentials: 'include' })
     ])
       .then(responses => Promise.all(responses.map(res => res.json())))
-      .then(([templatesData, userScenariosData]) => {
+      .then(([templatesData, userScenariosData, botsData]) => {
         setTemplates(templatesData);
         setUserScenarios(userScenariosData);
+        setBots(botsData);
         setLoading(false);
       })
       .catch(() => {
@@ -98,6 +101,11 @@ export default function ScenariosPage({ user }) {
     }
   };
 
+  // Функция для поиска бота, использующего сценарий
+  const getBotForScenario = (scenarioId) => {
+    return bots.find(bot => bot.scenario?.id == scenarioId);
+  };
+
   if (!user) return <div style={{ margin: 40, textAlign: 'center' }}>Войдите, чтобы просматривать сценарии.</div>;
   if (loading) return <div style={{ margin: 40, textAlign: 'center' }}>Загрузка...</div>;
   if (error) return <div style={{ margin: 40, color: 'red', textAlign: 'center' }}>{error}</div>;
@@ -134,6 +142,41 @@ export default function ScenariosPage({ user }) {
              <div key={template.id} style={{ background: '#f7f7f7', borderRadius: 10, padding: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', position: 'relative' }}>
                <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>{template.name}</div>
                <div style={{ color: '#888', marginBottom: 12, lineHeight: 1.4 }}>{template.description || 'Без описания'}</div>
+               
+               {/* Информация о боте (если шаблон используется) */}
+               {(() => {
+                 const bot = getBotForScenario(template.id);
+                 if (bot) {
+                   return (
+                     <div style={{ 
+                       fontSize: 14, 
+                       marginBottom: 12,
+                       padding: '8px 12px',
+                       background: bot.is_running ? '#f6ffed' : '#fff7e6',
+                       borderRadius: 6,
+                       border: `1px solid ${bot.is_running ? '#b7eb8f' : '#ffd591'}`,
+                       display: 'flex',
+                       alignItems: 'center',
+                       gap: 8
+                     }}>
+                       <span style={{ 
+                         fontSize: 12,
+                         color: bot.is_running ? '#52c41a' : '#faad14'
+                       }}>
+                         {bot.is_running ? '🟢' : '🟡'}
+                       </span>
+                       <span style={{ 
+                         color: bot.is_running ? '#52c41a' : '#faad14',
+                         fontWeight: 500
+                       }}>
+                         Бот: {bot.name} {bot.is_running ? 'запущен' : 'остановлен'}
+                       </span>
+                     </div>
+                   );
+                 }
+                 return null;
+               })()}
+               
                <div style={{ marginTop: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                  <button 
                    onClick={() => handleUseTemplate(template)} 
@@ -181,6 +224,41 @@ export default function ScenariosPage({ user }) {
               >
                 <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>{scenario.name}</div>
                 <div style={{ color: '#888', marginBottom: 12, lineHeight: 1.4 }}>{scenario.description || 'Без описания'}</div>
+                
+                {/* Информация о боте */}
+                {(() => {
+                  const bot = getBotForScenario(scenario.id);
+                  if (bot) {
+                    return (
+                      <div style={{ 
+                        fontSize: 14, 
+                        marginBottom: 12,
+                        padding: '8px 12px',
+                        background: bot.is_running ? '#f6ffed' : '#fff7e6',
+                        borderRadius: 6,
+                        border: `1px solid ${bot.is_running ? '#b7eb8f' : '#ffd591'}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8
+                      }}>
+                        <span style={{ 
+                          fontSize: 12,
+                          color: bot.is_running ? '#52c41a' : '#faad14'
+                        }}>
+                          {bot.is_running ? '🟢' : '🟡'}
+                        </span>
+                        <span style={{ 
+                          color: bot.is_running ? '#52c41a' : '#faad14',
+                          fontWeight: 500
+                        }}>
+                          Бот: {bot.name} {bot.is_running ? 'запущен' : 'остановлен'}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                
                 <div style={{ fontSize: 14, marginBottom: 8 }}>
                   <b>Создан:</b> {new Date(scenario.created_at).toLocaleDateString()}
                 </div>
