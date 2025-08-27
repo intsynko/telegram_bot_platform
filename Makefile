@@ -14,9 +14,9 @@ build:
 
 release:
 	make build
-	docker compose stop web_run
+	docker compose stop web frontend
 	make clear_space
-	docker compose up -d web_run
+	docker compose up -d web frontend
 
 dump:
 	docker exec -it db_1 sh -c "pg_dump db > dump.sql"
