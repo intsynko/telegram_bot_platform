@@ -92,6 +92,7 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data['field_idx'] = 0
         result = await ask_form_field(update, context)
         if result == FINISHED:
+            del context.user_data['fields']
             return await ask_next_question(update, context)
         return result
     elif node["type"] == 'menu':
@@ -112,7 +113,8 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # )
             ]
         ], one_time_keyboard=True, resize_keyboard=True)
-        await update.message.reply_text(node["data"]["label"], reply_markup=keyboard)
+        text = format_str(node["data"]["label"], context.user_data['answers'])
+        await update.message.reply_text(text, reply_markup=keyboard)
         context.user_data['asked'] = True
     elif node["type"] == 'break':
         context.user_data['node'] = get_start(context.user_data['graph'])["id"]
