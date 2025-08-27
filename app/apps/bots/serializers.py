@@ -27,3 +27,9 @@ class BotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bot
         fields = ['id', 'name', 'token', 'scenario']
+
+
+class BotSetScenarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bot
+        fields = ['scenario']

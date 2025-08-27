@@ -4,7 +4,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.bots.models import Bot
-from apps.bots.serializers import BotSerializer, BotReadSerializer
+from apps.bots.serializers import BotSerializer, BotReadSerializer, \
+    BotSetScenarioSerializer
 from apps.bots.bot_manager import start_bot, stop_bot
 
 
@@ -43,3 +44,14 @@ class BotViewSet(viewsets.ModelViewSet):
         bot = self.get_object()
         stopped = stop_bot(bot.id)
         return Response({"success": stopped})
+
+    @action(methods=["post"], detail=True)
+    def set_scenario(self, request: Request, **kwargs) -> Response:
+        """
+        Set scenario
+        """
+        bot = self.get_object()
+        serializer = BotSetScenarioSerializer(instance=bot, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(BotReadSerializer(instance=bot).data)

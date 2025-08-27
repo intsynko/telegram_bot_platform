@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { BASE_URL } from "../config";
+import BotSelectionModal from './BotSelectionModal';
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -51,7 +52,10 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
   const [scenarioName, setScenarioName] = useState('');
   const [showCreateScenarioModal, setShowCreateScenarioModal] = useState(false);
   const [createScenarioLoading, setCreateScenarioLoading] = useState(false);
-  const csrfToken = getCookie('csrftoken') || '';
+  const [showBotSelectionModal, setShowBotSelectionModal] = useState(false);
+  const [currentBot, setCurrentBot] = useState(null);
+  const [botRunning, setBotRunning] = useState(false);
+  const csrfToken = getCookie('csrfToken') || '';
 
   // Загрузка сценариев
   const fetchScenarios = useCallback(() => {
@@ -64,6 +68,30 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
       .catch(() => {
         // Обработка ошибки загрузки
       });
+  }, [currentScenario]);
+
+  // Поиск бота с текущим сценарием
+  const findBotWithScenario = useCallback(async () => {
+    if (!currentScenario) return;
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/bots/`, {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const bots = await response.json();
+        const botWithScenario = bots.find(bot => bot.scenario?.id == currentScenario);
+        if (botWithScenario) {
+          setCurrentBot(botWithScenario);
+          setBotRunning(botWithScenario.is_running || false);
+        } else {
+          setCurrentBot(null);
+          setBotRunning(false);
+        }
+      }
+    } catch (error) {
+      // Игнорируем ошибки при поиске бота
+    }
   }, [currentScenario]);
 
   useEffect(() => {
@@ -84,7 +112,7 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
     }
   }, [shouldCreate]);
 
-  // Подгрузка graph при смене сценария
+    // Подгрузка graph при смене сценария
   useEffect(() => {
     if (!currentScenario) return;
     fetch(`${BASE_URL}/api/scenarios/${currentScenario}/`, { credentials: 'include' })
@@ -105,7 +133,10 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
           setEdges([]);
         }
       });
-  }, [currentScenario, setNodes, setEdges]);
+      
+    // Ищем бота с текущим сценарием
+    findBotWithScenario();
+  }, [currentScenario, setNodes, setEdges, findBotWithScenario]);
 
   // Создание сценария
   const handleCreateScenario = async (name) => {
@@ -139,6 +170,66 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
     }
   };
 
+  // Запуск бота
+  const handleRunBot = async () => {
+    if (!currentBot) {
+      setShowBotSelectionModal(true);
+      return;
+    }
+
+    const csrfToken = getCookie('csrftoken');
+    try {
+      const response = await fetch(`${BASE_URL}/api/bots/${currentBot.id}/run/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+      });
+      
+      if (response.ok) {
+        setBotRunning(true);
+        toast.success(`Бот ${currentBot.name} успешно запущен!`);
+      } else {
+        toast.error('Ошибка запуска бота');
+      }
+    } catch (error) {
+      toast.error('Ошибка сети при запуске бота');
+    }
+  };
+
+  // Остановка бота
+  const handleStopBot = async () => {
+    if (!currentBot) return;
+
+    const csrfToken = getCookie('csrftoken');
+    try {
+      const response = await fetch(`${BASE_URL}/api/bots/${currentBot.id}/stop/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
+      });
+      
+      if (response.ok) {
+        setBotRunning(false);
+        toast.success(`Бот ${currentBot.name} остановлен!`);
+      } else {
+        toast.error('Ошибка остановки бота');
+      }
+    } catch (error) {
+      toast.error('Ошибка сети при остановке бота');
+    }
+  };
+
+  // Обработка выбора бота из модалки
+  const handleBotSelected = (bot) => {
+    setCurrentBot(bot);
+    setBotRunning(true);
+    findBotWithScenario(); // Обновляем состояние
+  };
+
   // Сохранение сценария
   const handleSaveScenario = async () => {
     if (!currentScenario) return;
@@ -160,10 +251,10 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
       if (resp.ok) {
         toast.success('Сценарий успешно сохранён!');
       } else {
-        toast.success('Ошибка при сохранении сценария');
+        toast.error('Ошибка при сохранении сценария');
       }
     } catch (e) {
-      toast.success('Ошибка сети при сохранении сценария');
+      toast.error('Ошибка сети при сохранении сценария');
     }
   };
 
@@ -198,11 +289,50 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
       >
         💾 Сохранить
       </button>
+      
+      {/* Кнопка запуска/остановки бота */}
+      <button
+        onClick={botRunning ? handleStopBot : handleRunBot}
+        style={{ 
+          padding: '6px 0', 
+          borderRadius: 4, 
+          border: botRunning ? '1px solid #f5222d' : '1px solid #1890ff', 
+          background: '#fff', 
+          color: botRunning ? '#f5222d' : '#1890ff', 
+          cursor: 'pointer', 
+          fontSize: 14,
+          fontWeight: 500
+        }}
+      >
+        {botRunning ? '⏹️ Остановить' : '▶️ Запустить'}
+      </button>
+      
+      {/* Информация о боте */}
+      {currentBot && (
+        <div style={{ 
+          fontSize: 12, 
+          color: '#666', 
+          padding: '8px', 
+          background: '#f5f5f5', 
+          borderRadius: 4,
+          textAlign: 'center'
+        }}>
+          Бот: {currentBot.name} {botRunning ? '🟢 запущен' : '🔴 остановлен'}
+        </div>
+      )}
+      
       <CreateScenarioModal
         open={showCreateScenarioModal}
         onClose={() => setShowCreateScenarioModal(false)}
         onCreate={handleCreateScenario}
         loading={createScenarioLoading}
+      />
+      
+      <BotSelectionModal
+        open={showBotSelectionModal}
+        onClose={() => setShowBotSelectionModal(false)}
+        onBotSelected={handleBotSelected}
+        scenarioId={currentScenario}
       />
     </div>
   );
