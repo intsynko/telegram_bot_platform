@@ -13,7 +13,7 @@ class ScenariosViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Scenario.objects.filter(owner=self.request.user)
+        return Scenario.objects.filter(owner=self.request.user, is_template=False)
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'update', 'partial_update']:
