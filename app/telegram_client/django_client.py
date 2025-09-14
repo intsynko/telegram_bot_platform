@@ -9,7 +9,7 @@ django.setup()
 
 from apps.scenarios.models import Scenario
 from apps.bots.models import Bot
-from apps.chats.models import Chat, Message
+from apps.chats.models import Chat, Message, FormField
 
 
 @sync_to_async
@@ -65,4 +65,34 @@ def get_chat_by_telegram_data(telegram_chat_id, bot_id):
     try:
         return Chat.objects.get(telegram_chat_id=telegram_chat_id, bot_id=bot_id)
     except Chat.DoesNotExist:
+        return None
+
+
+@sync_to_async
+def save_or_update_form_field(chat_id, field_name, field_value):
+    """Сохранить или обновить значение поля формы"""
+    form_field, created = FormField.objects.get_or_create(
+        chat_id=chat_id,
+        name=field_name,
+        defaults={'value': field_value}
+    )
+    if not created:
+        form_field.value = field_value
+        form_field.save()
+    return form_field
+
+
+@sync_to_async
+def get_form_fields_by_chat(chat_id):
+    """Получить все поля формы для чата"""
+    return list(FormField.objects.filter(chat_id=chat_id).order_by('created_at'))
+
+
+@sync_to_async
+def get_form_field_value(chat_id, field_name):
+    """Получить значение конкретного поля формы"""
+    try:
+        form_field = FormField.objects.get(chat_id=chat_id, name=field_name)
+        return form_field.value
+    except FormField.DoesNotExist:
         return None

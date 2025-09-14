@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Chat, Message
+from .models import Chat, Message, FormField
 
 
 @admin.register(Chat)
@@ -22,3 +22,16 @@ class MessageAdmin(admin.ModelAdmin):
     def text_preview(self, obj):
         return obj.text[:50] + '...' if len(obj.text) > 50 else obj.text
     text_preview.short_description = 'Text Preview'
+
+
+@admin.register(FormField)
+class FormFieldAdmin(admin.ModelAdmin):
+    list_display = ['chat', 'name', 'value_preview', 'created_at', 'updated_at']
+    list_filter = ['created_at', 'updated_at', 'chat__bot']
+    search_fields = ['name', 'value', 'chat__telegram_username']
+    readonly_fields = ['created_at', 'updated_at']
+    raw_id_fields = ['chat']
+
+    def value_preview(self, obj):
+        return obj.value[:50] + '...' if len(obj.value) > 50 else obj.value
+    value_preview.short_description = 'Value Preview'

@@ -43,6 +43,22 @@ async def update_chat_context(chat_id, context_data):
         await django_client.update_chat_context(chat_id, context_data)
 
 
+async def save_answers_to_form_fields(chat_id, answers):
+    """Сохранить все answers в FormField"""
+    if not chat_id or not answers:
+        return
+    
+    for form_name, form_data in answers.items():
+        if isinstance(form_data, dict):
+            # Если это словарь (данные формы)
+            for field_name, field_value in form_data.items():
+                field_name_full = f"{form_name}_{field_name}"
+                await django_client.save_or_update_form_field(chat_id, field_name_full, str(field_value))
+        else:
+            # Если это простое значение
+            await django_client.save_or_update_form_field(chat_id, form_name, str(form_data))
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Создаем или получаем чат для пользователя
     bot_id = os.environ.get("BOT_ID")
@@ -126,6 +142,11 @@ async def run_scenario(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'asked': context.user_data.get('asked')
         }
         await update_chat_context(context.user_data['chat_id'], chat_context)
+        
+        # Сохраняем все answers в FormField
+        answers = context.user_data.get('answers', {})
+        if answers:
+            await save_answers_to_form_fields(context.user_data['chat_id'], answers)
     
     return await ask_next_question(update, context)
 
@@ -166,6 +187,11 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for pair in node["data"]["pairs"]:
             variable, value = pair["variable"], pair["value"]
             context.user_data['answers'][variable] = value
+        
+        # Сохраняем обновленные answers в FormField
+        if context.user_data.get('chat_id'):
+            await save_answers_to_form_fields(context.user_data['chat_id'], context.user_data['answers'])
+        
         context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
         return await ask_next_question(update, context)
     elif node["type"] == 'form':
@@ -183,6 +209,9 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         result = await ask_form_field(update, context)
         if result == FINISHED:
             del context.user_data['fields']
+            # Сохраняем answers после завершения формы
+            if context.user_data.get('chat_id'):
+                await save_answers_to_form_fields(context.user_data['chat_id'], context.user_data['answers'])
             return await ask_next_question(update, context)
         return result
     elif node["type"] == 'menu':
@@ -191,6 +220,14 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
             value = update.message.text
             for field in node["data"]["buttons"]:
                 if value == field["label"]:
+                    # Сохраняем выбор пользователя в answers, если нужно
+                    if 'save_to_answers' in node["data"] and node["data"]["save_to_answers"]:
+                        answers_key = node["data"].get("answers_key", "menu_choice")
+                        context.user_data['answers'][answers_key] = value
+                        # Сохраняем в FormField
+                        if context.user_data.get('chat_id'):
+                            await save_answers_to_form_fields(context.user_data['chat_id'], context.user_data['answers'])
+                    
                     context.user_data["node"] = get_next_node_id_by_source_id(field["id"], context.user_data['graph'], for_btn=True)
                     return await ask_next_question(update, context)
         keyboard = ReplyKeyboardMarkup([

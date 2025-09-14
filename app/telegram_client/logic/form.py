@@ -148,4 +148,12 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['answers'][node["data"]["label"]] = {field["name"]: value}
     else:
         context.user_data['answers'][node["data"]["label"]][field["name"]] = value
+    
+    # Сохраняем значение поля формы в базу данных
+    chat_id = context.user_data.get('chat_id')
+    if chat_id:
+        # Создаем уникальное имя поля: form_label + field_name
+        field_name = f"{node['data']['label']}_{field['name']}"
+        await django_client.save_or_update_form_field(chat_id, field_name, value)
+    
     return True

@@ -37,3 +37,19 @@ class Message(models.Model):
     def __str__(self):
         message_type = "User" if self.is_user_message else "Bot"
         return f"{message_type}: {self.text[:50]}{'...' if len(self.text) > 50 else ''}"
+
+
+class FormField(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Field Name")
+    value = models.TextField(verbose_name="Field Value")
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='form_fields', verbose_name="Chat")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Form Field"
+        verbose_name_plural = "Form Fields"
+        unique_together = ['name', 'chat']
+
+    def __str__(self):
+        return f"{self.chat.telegram_username or self.chat.telegram_user_id} - {self.name}: {self.value[:50]}{'...' if len(self.value) > 50 else ''}"
