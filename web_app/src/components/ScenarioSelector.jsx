@@ -177,7 +177,32 @@ export default function ScenarioSelector({ nodes = [], edges = [], setNodes, set
       return;
     }
 
+    // Сначала сохраняем текущий сценарий
+    
     const csrfToken = getCookie('csrftoken');
+    const graph = JSON.stringify({ nodes, edges });
+    try {
+      const resp = await fetch(`${BASE_URL}/api/scenarios/${currentScenario}/`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({ 
+          graph,
+          name: scenarioName 
+        }),
+      });
+      if (resp.ok) {
+        toast.success('Сценарий успешно сохранён!');
+      } else {
+        toast.error('Ошибка при сохранении сценария перед запуском');
+      }
+    } catch (e) {
+      toast.error('Ошибка сети при сохранении сценария перед запуском');
+    }
+
     try {
       const response = await fetch(`${BASE_URL}/api/bots/${currentBot.id}/run/`, {
         method: 'POST',
