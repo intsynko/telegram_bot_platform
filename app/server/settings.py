@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.bots',
     'apps.scenarios',
+    'apps.chats',
 ]
 
 MIDDLEWARE = [
