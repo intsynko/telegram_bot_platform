@@ -59,6 +59,70 @@ async def save_answers_to_form_fields(chat_id, answers):
             await django_client.save_or_update_form_field(chat_id, form_name, str(form_data))
 
 
+async def restore_chat_context(telegram_chat_id, bot_id, context):
+    """Восстановить контекст чата из базы данных"""
+    try:
+        # Получаем контекст чата из базы
+        chat_data = await django_client.get_chat_context(telegram_chat_id, bot_id)
+        if not chat_data:
+            return False
+        
+        # Восстанавливаем chat_id
+        context.user_data['chat_id'] = chat_data['chat_id']
+        
+        # Восстанавливаем сохраненный контекст
+        saved_context = chat_data['context']
+        if saved_context:
+            # Восстанавливаем основные данные
+            if 'scenario_id' in saved_context:
+                context.user_data['scenario_id'] = saved_context['scenario_id']
+            if 'node' in saved_context:
+                context.user_data['node'] = saved_context['node']
+            if 'answers' in saved_context:
+                context.user_data['answers'] = saved_context['answers']
+            if 'form' in saved_context:
+                context.user_data['form'] = saved_context['form']
+            if 'fields' in saved_context:
+                context.user_data['fields'] = saved_context['fields']
+            if 'field_idx' in saved_context:
+                context.user_data['field_idx'] = saved_context['field_idx']
+            if 'asked' in saved_context:
+                context.user_data['asked'] = saved_context['asked']
+        
+        # Восстанавливаем graph если есть scenario_id
+        if context.user_data.get('scenario_id'):
+            scenario = await django_client.get_scenario_by_id(context.user_data['scenario_id'])
+            if scenario:
+                context.user_data['graph'] = json.loads(scenario.graph)
+        
+        # Восстанавливаем answers из FormField
+        form_fields = await django_client.get_chat_form_fields(chat_data['chat_id'])
+        if form_fields:
+            # Группируем поля по формам
+            restored_answers = {}
+            for field_name, field_value in form_fields.items():
+                if '_' in field_name:
+                    form_name, field_key = field_name.split('_', 1)
+                    if form_name not in restored_answers:
+                        restored_answers[form_name] = {}
+                    restored_answers[form_name][field_key] = field_value
+                else:
+                    restored_answers[field_name] = field_value
+            
+            # Объединяем с существующими answers
+            if context.user_data.get('answers'):
+                context.user_data['answers'].update(restored_answers)
+            else:
+                context.user_data['answers'] = restored_answers
+        
+        logger.info(f"Восстановлен контекст для чата {telegram_chat_id}: {context.user_data}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Ошибка восстановления контекста для чата {telegram_chat_id}: {e}")
+        return False
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Создаем или получаем чат для пользователя
     bot_id = os.environ.get("BOT_ID")
@@ -66,21 +130,36 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     telegram_username = update.effective_user.username
     telegram_chat_id = update.effective_chat.id
     
-    chat, created = await django_client.get_or_create_chat(
-        telegram_user_id=telegram_user_id,
-        telegram_username=telegram_username,
-        telegram_chat_id=telegram_chat_id,
-        bot_id=bot_id,
-        context={}
-    )
+    # Пытаемся восстановить контекст из базы данных
+    context_restored = await restore_chat_context(telegram_chat_id, bot_id, context)
     
-    # Сохраняем chat_id в контексте пользователя
-    context.user_data['chat_id'] = chat.id
+    if not context_restored:
+        # Если контекст не восстановлен, создаем новый чат
+        chat, created = await django_client.get_or_create_chat(
+            telegram_user_id=telegram_user_id,
+            telegram_username=telegram_username,
+            telegram_chat_id=telegram_chat_id,
+            bot_id=bot_id,
+            context={}
+        )
+        
+        # Сохраняем chat_id в контексте пользователя
+        context.user_data['chat_id'] = chat.id
+    else:
+        # Контекст восстановлен, обновляем данные пользователя если изменились
+        chat, created = await django_client.get_or_create_chat(
+            telegram_user_id=telegram_user_id,
+            telegram_username=telegram_username,
+            telegram_chat_id=telegram_chat_id,
+            bot_id=bot_id,
+            context=context.user_data.get('context', {})
+        )
+        context.user_data['chat_id'] = chat.id
     
     # Сохраняем сообщение пользователя
     if update.message and update.message.text:
         await django_client.create_message(
-            chat_id=chat.id,
+            chat_id=context.user_data['chat_id'],
             text=update.message.text,
             is_user_message=True
         )
@@ -89,21 +168,36 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def run_scenario(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Если нет chat_id, создаем чат
+    # Если нет chat_id, пытаемся восстановить контекст или создаем новый чат
     if not context.user_data.get('chat_id'):
         bot_id = os.environ.get("BOT_ID")
         telegram_user_id = update.effective_user.id
         telegram_username = update.effective_user.username
         telegram_chat_id = update.effective_chat.id
         
-        chat, created = await django_client.get_or_create_chat(
-            telegram_user_id=telegram_user_id,
-            telegram_username=telegram_username,
-            telegram_chat_id=telegram_chat_id,
-            bot_id=bot_id,
-            context={}
-        )
-        context.user_data['chat_id'] = chat.id
+        # Пытаемся восстановить контекст
+        context_restored = await restore_chat_context(telegram_chat_id, bot_id, context)
+        
+        if not context_restored:
+            # Если контекст не восстановлен, создаем новый чат
+            chat, created = await django_client.get_or_create_chat(
+                telegram_user_id=telegram_user_id,
+                telegram_username=telegram_username,
+                telegram_chat_id=telegram_chat_id,
+                bot_id=bot_id,
+                context={}
+            )
+            context.user_data['chat_id'] = chat.id
+        else:
+            # Контекст восстановлен, обновляем данные пользователя
+            chat, created = await django_client.get_or_create_chat(
+                telegram_user_id=telegram_user_id,
+                telegram_username=telegram_username,
+                telegram_chat_id=telegram_chat_id,
+                bot_id=bot_id,
+                context=context.user_data.get('context', {})
+            )
+            context.user_data['chat_id'] = chat.id
     
     # Сохраняем сообщение пользователя, если это не команда /start
     if update.message and update.message.text and not update.message.text.startswith('/'):

@@ -96,3 +96,28 @@ def get_form_field_value(chat_id, field_name):
         return form_field.value
     except FormField.DoesNotExist:
         return None
+
+
+@sync_to_async
+def get_chat_context(telegram_chat_id, bot_id):
+    """Получить контекст чата для восстановления состояния бота"""
+    try:
+        chat = Chat.objects.get(telegram_chat_id=telegram_chat_id, bot_id=bot_id)
+        return {
+            'chat_id': chat.id,
+            'context': chat.context,
+            'telegram_user_id': chat.telegram_user_id,
+            'telegram_username': chat.telegram_username
+        }
+    except Chat.DoesNotExist:
+        return None
+
+
+@sync_to_async
+def get_chat_form_fields(chat_id):
+    """Получить все поля формы для чата"""
+    try:
+        form_fields = FormField.objects.filter(chat_id=chat_id)
+        return {field.name: field.value for field in form_fields}
+    except:
+        return {}
