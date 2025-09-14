@@ -17,7 +17,7 @@ class ChatListByBotView(generics.ListAPIView):
 
 @api_view(['GET'])
 def get_bot_chats_paginated(request, bot_id):
-    """Получить чаты бота с пагинацией"""
+    """Получить чаты бота с пагинацией и динамическими полями формы"""
     try:
         # Проверяем, что бот существует
         bot = Bot.objects.get(id=bot_id)
@@ -35,11 +35,34 @@ def get_bot_chats_paginated(request, bot_id):
     paginator = Paginator(chats, page_size)
     page_obj = paginator.get_page(page)
     
-    # Сериализация
-    serializer = ChatSerializer(page_obj.object_list, many=True)
+    # Получаем все уникальные поля формы для этого бота
+    all_form_fields = FormField.objects.filter(chat__bot_id=bot_id).values_list('name', flat=True).distinct().order_by('name')
+    form_field_names = list(all_form_fields)
+    
+    # Подготавливаем данные для каждого чата
+    results = []
+    for chat in page_obj.object_list:
+        # Базовые данные чата
+        chat_data = {
+            'id': chat.id,
+            'telegram_user_id': chat.telegram_user_id,
+            'telegram_username': chat.telegram_username,
+            'telegram_chat_id': chat.telegram_chat_id,
+            'created_at': chat.created_at,
+            'updated_at': chat.updated_at,
+            'context': chat.context
+        }
+        
+        # Добавляем данные полей формы
+        form_fields_dict = {field.name: field.value for field in chat.form_fields.all()}
+        for field_name in form_field_names:
+            chat_data[f'field_{field_name}'] = form_fields_dict.get(field_name, '')
+        
+        results.append(chat_data)
     
     return Response({
-        'results': serializer.data,
+        'results': results,
+        'form_fields': form_field_names,
         'count': paginator.count,
         'total_pages': paginator.num_pages,
         'current_page': page_obj.number,

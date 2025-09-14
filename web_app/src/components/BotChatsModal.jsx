@@ -9,6 +9,7 @@ function getCookie(name) {
 
 export default function BotChatsModal({ bot, onClose }) {
   const [chats, setChats] = useState([]);
+  const [formFields, setFormFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -30,10 +31,12 @@ export default function BotChatsModal({ bot, onClose }) {
       if (response.ok) {
         const data = await response.json();
         setChats(data.results || []);
+        setFormFields(data.form_fields || []);
         setTotalPages(Math.ceil(data.count / pageSize) || 1);
       } else {
         console.error('Ошибка загрузки чатов');
         setChats([]);
+        setFormFields([]);
       }
     } catch (error) {
       console.error('Ошибка сети при загрузке чатов:', error);
@@ -57,38 +60,14 @@ export default function BotChatsModal({ bot, onClose }) {
     });
   };
 
-  const getFormFieldsTable = (formFields) => {
-    if (!formFields || formFields.length === 0) {
-      return <span style={{ color: '#999', fontStyle: 'italic' }}>Нет данных</span>;
-    }
+  const getFieldValue = (chat, fieldName) => {
+    const value = chat[`field_${fieldName}`];
+    return value || '-';
+  };
 
-    return (
-      <table style={{
-        width: '100%',
-        borderCollapse: 'collapse',
-        fontSize: '12px',
-        marginTop: '5px'
-      }}>
-        <thead>
-          <tr style={{ background: '#f5f5f5' }}>
-            <th style={{ padding: '4px 8px', textAlign: 'left', border: '1px solid #ddd' }}>Поле</th>
-            <th style={{ padding: '4px 8px', textAlign: 'left', border: '1px solid #ddd' }}>Значение</th>
-          </tr>
-        </thead>
-        <tbody>
-          {formFields.map((field, index) => (
-            <tr key={index}>
-              <td style={{ padding: '4px 8px', border: '1px solid #ddd', maxWidth: '150px', wordBreak: 'break-word' }}>
-                {field.name}
-              </td>
-              <td style={{ padding: '4px 8px', border: '1px solid #ddd', maxWidth: '200px', wordBreak: 'break-word' }}>
-                {field.value}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
+  const truncateText = (text, maxLength = 50) => {
+    if (!text || text === '-') return text;
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
 
   if (!bot) return null;
@@ -130,7 +109,7 @@ export default function BotChatsModal({ bot, onClose }) {
               Чаты бота: {bot.name}
             </h2>
             <p style={{ margin: '0', color: '#666', fontSize: '14px' }}>
-              ID пользователей и данные форм
+              ID пользователей и данные форм {formFields.length > 0 && `(${formFields.length} полей)`}
             </p>
           </div>
           <button
@@ -189,23 +168,25 @@ export default function BotChatsModal({ bot, onClose }) {
                 <table style={{
                   width: '100%',
                   borderCollapse: 'collapse',
-                  minWidth: '800px'
+                  minWidth: `${400 + (formFields.length * 150)}px`
                 }}>
                   <thead>
                     <tr style={{ background: '#f8f9fa' }}>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0', minWidth: '120px' }}>
                         ID пользователя
                       </th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0', minWidth: '120px' }}>
                         Username
                       </th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0', minWidth: '120px' }}>
                         ID чата
                       </th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0' }}>
-                        Поля формы
-                      </th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0' }}>
+                      {formFields.map(fieldName => (
+                        <th key={fieldName} style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0', minWidth: '150px' }}>
+                          {fieldName}
+                        </th>
+                      ))}
+                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0', minWidth: '120px' }}>
                         Создан
                       </th>
                     </tr>
@@ -222,9 +203,17 @@ export default function BotChatsModal({ bot, onClose }) {
                         <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '14px' }}>
                           {chat.telegram_chat_id}
                         </td>
-                        <td style={{ padding: '12px', maxWidth: '300px' }}>
-                          {getFormFieldsTable(chat.form_fields)}
-                        </td>
+                        {formFields.map(fieldName => (
+                          <td key={fieldName} style={{ 
+                            padding: '12px', 
+                            fontSize: '14px',
+                            maxWidth: '200px',
+                            wordBreak: 'break-word',
+                            color: getFieldValue(chat, fieldName) === '-' ? '#999' : '#333'
+                          }}>
+                            {truncateText(getFieldValue(chat, fieldName))}
+                          </td>
+                        ))}
                         <td style={{ padding: '12px', fontSize: '14px', color: '#666' }}>
                           {formatDate(chat.created_at)}
                         </td>
