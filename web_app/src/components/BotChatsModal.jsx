@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BASE_URL } from '../config';
+import ConversationModal from './ConversationModal';
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -14,6 +15,8 @@ export default function BotChatsModal({ bot, onClose }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize] = useState(10);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [showConversationModal, setShowConversationModal] = useState(false);
 
   useEffect(() => {
     if (bot) {
@@ -48,6 +51,16 @@ export default function BotChatsModal({ bot, onClose }) {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
+  };
+
+  const handleViewConversation = (chat) => {
+    setSelectedChat(chat);
+    setShowConversationModal(true);
+  };
+
+  const handleCloseConversationModal = () => {
+    setShowConversationModal(false);
+    setSelectedChat(null);
   };
 
   const formatDate = (dateString) => {
@@ -172,14 +185,14 @@ export default function BotChatsModal({ bot, onClose }) {
                 }}>
                   <thead>
                     <tr style={{ background: '#f8f9fa' }}>
+                      <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #e0e0e0', minWidth: '120px' }}>
+                        Действия
+                      </th>
                       <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0', minWidth: '120px' }}>
                         ID пользователя
                       </th>
                       <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0', minWidth: '120px' }}>
                         Username
-                      </th>
-                      <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0', minWidth: '120px' }}>
-                        ID чата
                       </th>
                       {formFields.map(fieldName => (
                         <th key={fieldName} style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e0e0e0', minWidth: '150px' }}>
@@ -194,14 +207,45 @@ export default function BotChatsModal({ bot, onClose }) {
                   <tbody>
                     {chats.map(chat => (
                       <tr key={chat.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => handleViewConversation(chat)}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: '12px',
+                              background: '#1890ff',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontWeight: '500'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#40a9ff'}
+                            onMouseLeave={(e) => e.target.style.background = '#1890ff'}
+                          >
+                            💬 Переписка
+                          </button>
+                        </td>
                         <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '14px' }}>
                           {chat.telegram_user_id}
                         </td>
                         <td style={{ padding: '12px' }}>
-                          {chat.telegram_username ? `@${chat.telegram_username}` : '-'}
-                        </td>
-                        <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '14px' }}>
-                          {chat.telegram_chat_id}
+                          {chat.telegram_username ? (
+                            <a 
+                              href={`https://t.me/${chat.telegram_username}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: '#1890ff',
+                                textDecoration: 'none',
+                                fontWeight: '500'
+                              }}
+                              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                            >
+                              @{chat.telegram_username}
+                            </a>
+                          ) : '-'}
                         </td>
                         {formFields.map(fieldName => (
                           <td key={fieldName} style={{ 
@@ -271,6 +315,14 @@ export default function BotChatsModal({ bot, onClose }) {
           )}
         </div>
       </div>
+
+      {showConversationModal && selectedChat && (
+        <ConversationModal
+          chat={selectedChat}
+          bot={bot}
+          onClose={handleCloseConversationModal}
+        />
+      )}
     </div>
   );
 }

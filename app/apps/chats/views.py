@@ -2,8 +2,8 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.core.paginator import Paginator
-from .models import Chat, FormField
-from .serializers import ChatSerializer, FormFieldSerializer
+from apps.chats.models import Chat, FormField, Message
+from apps.chats.serializers import ChatSerializer, FormFieldSerializer, MessageSerializer
 from apps.bots.models import Bot
 
 
@@ -78,6 +78,18 @@ def get_chat_form_fields(request, chat_id):
         chat = Chat.objects.get(id=chat_id)
         form_fields = FormField.objects.filter(chat=chat).order_by('created_at')
         serializer = FormFieldSerializer(form_fields, many=True)
+        return Response(serializer.data)
+    except Chat.DoesNotExist:
+        return Response({'error': 'Чат не найден'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def get_chat_messages(request, chat_id):
+    """Получить сообщения чата"""
+    try:
+        chat = Chat.objects.get(id=chat_id)
+        messages = Message.objects.filter(chat=chat).order_by('created_at')
+        serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
     except Chat.DoesNotExist:
         return Response({'error': 'Чат не найден'}, status=status.HTTP_404_NOT_FOUND)
