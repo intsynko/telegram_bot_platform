@@ -6,6 +6,7 @@ from telegram import Update, ForceReply, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes
 
 from telegram_client.logic.graph import get_next_node_id_by_source_id, get_node_by_id
+from telegram_client import django_client
 
 logging.basicConfig(
     level=logging.INFO
@@ -13,6 +14,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 ASKING, FINISHED = range(2)
+
+
+async def save_bot_message(chat_id, text):
+    """Сохранить сообщение бота в базу данных"""
+    if chat_id and text:
+        await django_client.create_message(
+            chat_id=chat_id,
+            text=text,
+            is_user_message=False
+        )
 
 
 async def ask_form_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -38,21 +49,30 @@ async def ask_form_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = ReplyKeyboardMarkup([
             [KeyboardButton('Да'), KeyboardButton('Нет')]
         ], one_time_keyboard=True, resize_keyboard=True)
-        await update.message.reply_text(f"{field['name']} (Да/Нет):", reply_markup=keyboard)
+        message_text = f"{field['name']} (Да/Нет):"
+        await update.message.reply_text(message_text, reply_markup=keyboard)
+        # Сохраняем сообщение бота
+        await save_bot_message(context.user_data.get('chat_id'), message_text)
         return ASKING
     # LIST: варианты ответа
     elif field["type"] == 'list':
         # Предполагаем, что варианты ответа хранятся в field.default_value через запятую
         options = [opt.strip() for opt in (field.get("default_value") or '').split(',') if opt.strip()]
         if not options:
-            await update.message.reply_text(f"{field['name']} (нет вариантов)")
+            message_text = f"{field['name']} (нет вариантов)"
+            await update.message.reply_text(message_text)
+            # Сохраняем сообщение бота
+            await save_bot_message(context.user_data.get('chat_id'), message_text)
             context.user_data['field_idx'] += 1
             return await ask_form_field(update, context)
         keyboard = ReplyKeyboardMarkup(
             [[KeyboardButton(opt)] for opt in options],
             one_time_keyboard=True, resize_keyboard=True
         )
-        await update.message.reply_text(f"{field['name']} (выберите вариант):", reply_markup=keyboard)
+        message_text = f"{field['name']} (выберите вариант):"
+        await update.message.reply_text(message_text, reply_markup=keyboard)
+        # Сохраняем сообщение бота
+        await save_bot_message(context.user_data.get('chat_id'), message_text)
         return ASKING
     # PHONE: кнопка для отправки номера
     elif field["type"] == 'phone':
@@ -60,10 +80,16 @@ async def ask_form_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [[KeyboardButton('Отправить номер', request_contact=True)]],
             one_time_keyboard=True, resize_keyboard=True
         )
-        await update.message.reply_text(f"{field['name']} (отправьте номер):", reply_markup=keyboard)
+        message_text = f"{field['name']} (отправьте номер):"
+        await update.message.reply_text(message_text, reply_markup=keyboard)
+        # Сохраняем сообщение бота
+        await save_bot_message(context.user_data.get('chat_id'), message_text)
         return ASKING
     else:
-        await update.message.reply_text(f"{field['name']}:", reply_markup=ForceReply())
+        message_text = f"{field['name']}:"
+        await update.message.reply_text(message_text, reply_markup=ForceReply())
+        # Сохраняем сообщение бота
+        await save_bot_message(context.user_data.get('chat_id'), message_text)
         return ASKING
 
 
@@ -85,24 +111,36 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [[KeyboardButton('Отправить номер', request_contact=True)]],
                 one_time_keyboard=True, resize_keyboard=True
             )
-            await update.message.reply_text("Пожалуйста, отправьте номер:", reply_markup=keyboard)
+            message_text = "Пожалуйста, отправьте номер:"
+            await update.message.reply_text(message_text, reply_markup=keyboard)
+            # Сохраняем сообщение бота
+            await save_bot_message(context.user_data.get('chat_id'), message_text)
             return ASKING
     # INT: валидация
     if field["type"] == 'int':
         if not value.isdigit():
-            await update.message.reply_text('Пожалуйста, введите целое число:')
+            message_text = 'Пожалуйста, введите целое число:'
+            await update.message.reply_text(message_text)
+            # Сохраняем сообщение бота
+            await save_bot_message(context.user_data.get('chat_id'), message_text)
             return ASKING
     # DATE: валидация (формат YYYY-MM-DD)
     if field["type"] == 'date':
         try:
             datetime.strptime(value, '%Y-%m-%d')
         except Exception:
-            await update.message.reply_text('Пожалуйста, введите дату в формате ГГГГ-ММ-ДД:')
+            message_text = 'Пожалуйста, введите дату в формате ГГГГ-ММ-ДД:'
+            await update.message.reply_text(message_text)
+            # Сохраняем сообщение бота
+            await save_bot_message(context.user_data.get('chat_id'), message_text)
             return ASKING
     # TIME: валидация (формат HH:MM)
     if field["type"] == 'time':
         if not re.match(r'^\d{2}:\d{2}$', value):
-            await update.message.reply_text('Пожалуйста, введите время в формате ЧЧ:ММ:')
+            message_text = 'Пожалуйста, введите время в формате ЧЧ:ММ:'
+            await update.message.reply_text(message_text)
+            # Сохраняем сообщение бота
+            await save_bot_message(context.user_data.get('chat_id'), message_text)
             return ASKING
 
     # сохраняем данные опроса

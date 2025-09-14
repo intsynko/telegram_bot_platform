@@ -27,16 +27,84 @@ logger = logging.getLogger(__name__)
 ASKING, FINISHED = range(2)
 
 
+async def save_bot_message(chat_id, text):
+    """Сохранить сообщение бота в базу данных"""
+    if chat_id and text:
+        await django_client.create_message(
+            chat_id=chat_id,
+            text=text,
+            is_user_message=False
+        )
+
+
+async def update_chat_context(chat_id, context_data):
+    """Обновить контекст чата в базе данных"""
+    if chat_id and context_data:
+        await django_client.update_chat_context(chat_id, context_data)
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Создаем или получаем чат для пользователя
+    bot_id = os.environ.get("BOT_ID")
+    telegram_user_id = update.effective_user.id
+    telegram_username = update.effective_user.username
+    telegram_chat_id = update.effective_chat.id
+    
+    chat, created = await django_client.get_or_create_chat(
+        telegram_user_id=telegram_user_id,
+        telegram_username=telegram_username,
+        telegram_chat_id=telegram_chat_id,
+        bot_id=bot_id,
+        context={}
+    )
+    
+    # Сохраняем chat_id в контексте пользователя
+    context.user_data['chat_id'] = chat.id
+    
+    # Сохраняем сообщение пользователя
+    if update.message and update.message.text:
+        await django_client.create_message(
+            chat_id=chat.id,
+            text=update.message.text,
+            is_user_message=True
+        )
+    
     return await run_scenario(update, context)
 
 
 async def run_scenario(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Если нет chat_id, создаем чат
+    if not context.user_data.get('chat_id'):
+        bot_id = os.environ.get("BOT_ID")
+        telegram_user_id = update.effective_user.id
+        telegram_username = update.effective_user.username
+        telegram_chat_id = update.effective_chat.id
+        
+        chat, created = await django_client.get_or_create_chat(
+            telegram_user_id=telegram_user_id,
+            telegram_username=telegram_username,
+            telegram_chat_id=telegram_chat_id,
+            bot_id=bot_id,
+            context={}
+        )
+        context.user_data['chat_id'] = chat.id
+    
+    # Сохраняем сообщение пользователя, если это не команда /start
+    if update.message and update.message.text and not update.message.text.startswith('/'):
+        await django_client.create_message(
+            chat_id=context.user_data['chat_id'],
+            text=update.message.text,
+            is_user_message=True
+        )
+    
     if not context.user_data.get('scenario_id'):
         id = os.environ.get("BOT_ID")
         scenario = await django_client.get_scenario_by_bot(id)
         if not scenario:
-            await update.message.reply_text('Нет доступных сценариев.')
+            error_message = 'Нет доступных сценариев.'
+            await update.message.reply_text(error_message)
+            # Сохраняем сообщение бота
+            await save_bot_message(context.user_data.get('chat_id'), error_message)
             return ConversationHandler.END
         context.user_data['scenario_id'] = scenario.id
         context.user_data['graph'] = json.loads(scenario.graph)
@@ -45,6 +113,20 @@ async def run_scenario(update: Update, context: ContextTypes.DEFAULT_TYPE):
     node_id = context.user_data.get('node', None)
     if node_id is None:
         context.user_data["node"] = get_start(context.user_data['graph'])["id"]
+    
+    # Обновляем контекст чата с текущими данными пользователя
+    if context.user_data.get('chat_id'):
+        chat_context = {
+            'scenario_id': context.user_data.get('scenario_id'),
+            'node': context.user_data.get('node'),
+            'answers': context.user_data.get('answers', {}),
+            'form': context.user_data.get('form'),
+            'fields': context.user_data.get('fields'),
+            'field_idx': context.user_data.get('field_idx'),
+            'asked': context.user_data.get('asked')
+        }
+        await update_chat_context(context.user_data['chat_id'], chat_context)
+    
     return await ask_next_question(update, context)
 
 
@@ -57,7 +139,10 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         node = get_node_by_id(node_id, context.user_data['graph'])
 
     if node["type"] == 'message':
-        await update.message.reply_text(format_str(node["data"]["text"], context.user_data['answers']))
+        message_text = format_str(node["data"]["text"], context.user_data['answers'])
+        await update.message.reply_text(message_text)
+        # Сохраняем сообщение бота
+        await save_bot_message(context.user_data.get('chat_id'), message_text)
         context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
         return await ask_next_question(update, context)
     if node["type"] == 'condition':
@@ -73,6 +158,8 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
             tg_connector.send_message(text)
         elif node["data"]["type"] == 'email':
             pass
+        # Сохраняем сообщение бота (уведомление)
+        await save_bot_message(context.user_data.get('chat_id'), f"[Уведомление] {text}")
         context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
         return await ask_next_question(update, context)
     if node["type"] == 'datawrite':
@@ -84,7 +171,10 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif node["type"] == 'form':
         context.user_data['form'] = node
         if not node["data"]["fields"]:
-            await update.message.reply_text('В форме нет полей.')
+            error_message = 'В форме нет полей.'
+            await update.message.reply_text(error_message)
+            # Сохраняем сообщение бота
+            await save_bot_message(context.user_data.get('chat_id'), error_message)
             context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
             return await ask_next_question(update, context)
         if not context.user_data.get('fields'):
@@ -115,12 +205,17 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ], one_time_keyboard=True, resize_keyboard=True)
         text = format_str(node["data"]["label"], context.user_data['answers'])
         await update.message.reply_text(text, reply_markup=keyboard)
+        # Сохраняем сообщение бота
+        await save_bot_message(context.user_data.get('chat_id'), text)
         context.user_data['asked'] = True
     elif node["type"] == 'break':
         context.user_data['node'] = get_start(context.user_data['graph'])["id"]
         return ConversationHandler.END
     else:
-        await update.message.reply_text('Неизвестный тип действия или не задана форма.')
+        error_message = 'Неизвестный тип действия или не задана форма.'
+        await update.message.reply_text(error_message)
+        # Сохраняем сообщение бота
+        await save_bot_message(context.user_data.get('chat_id'), error_message)
         context.user_data['node'] = get_start(context.user_data['graph'])["id"]
         return await run_scenario(update, context)
 
