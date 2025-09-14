@@ -61,6 +61,7 @@ export default function Header({ user, setUser }) {
             {/* <Link to="/scenarios" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Сценарии</Link> */}
             <Link to="/scenarios/templates" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Сценарии</Link>
             <Link to="/bots" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Боты</Link>
+            <Link to="/users" style={{ textDecoration: 'none', color: '#1890ff', fontWeight: 500 }}>Пользователи</Link>
             <div style={{ position: 'relative', marginLeft: 16 }}>
               <button
                 onClick={() => setMenuOpen(v => !v)}
