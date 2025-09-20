@@ -1,0 +1,21 @@
+# Security — web_app
+
+## XSS & Content
+- Escape and sanitize user content; never `dangerouslySetInnerHTML`
+- Use CSP headers (nonce/sha256) and disallow inline scripts
+
+## Tokens & Secrets
+- No secrets in client bundle; use env only for public keys prefixed `VITE_`
+- Store auth tokens in httpOnly cookies; avoid localStorage
+
+## Network
+- SameSite and Secure cookies; HTTPS only
+- CSRF protection for state-changing requests
+
+## Dependencies
+- Pin versions; run vulnerability scans in CI
+- Review changelogs before upgrades
+
+## Clickjacking & Mixed Content
+- `X-Frame-Options: DENY` (unless explicitly needed)
+- Block mixed content; upgrade insecure requests

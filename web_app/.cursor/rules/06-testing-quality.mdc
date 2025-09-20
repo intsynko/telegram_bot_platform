@@ -1,0 +1,15 @@
+# Testing & Quality — web_app
+
+## Tools
+- Unit/UI: React Testing Library + Jest
+- E2E: Playwright
+- Coverage: 80%+ overall, block CI on drop
+
+## Practices
+- Test only behavior and contracts, not implementation details
+- Mock network via MSW; avoid shallow rendering
+- Deterministic tests; seed RNG when needed
+
+## CI
+- Run lint, type-check, unit, e2e (smoke) on PR
+- Upload coverage artifacts and HTML report

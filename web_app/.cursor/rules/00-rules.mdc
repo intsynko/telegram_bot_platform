@@ -1,0 +1,17 @@
+# Rules Index (Cursor) — web_app
+
+Rules are mandatory for all changes in `web_app/`.
+
+- 00-core-principles.mdc — Key principles
+- 01-architecture-stack.mdc — FE architecture and stack
+- 02-repository-structure.mdc — Directories, naming, exports
+- 03-code-standards.mdc — JS/TS style, RORO, braces
+- 04-error-handling.mdc — Guards, logging, zod, boundaries
+- 05-react-patterns.mdc — Components, Suspense, dynamic loading, images
+- 06-testing-quality.mdc — RTL, Playwright, coverage
+- 07-performance-a11y.mdc — Performance and accessibility
+- 08-security.mdc — Security and secrets handling
+- 09-documentation.mdc — Docs and Storybook
+
+Enforcement
+- Checked in PR and CI; Cursor agents must follow this index

@@ -1,0 +1,64 @@
+# Стандарты написания кода
+
+## Стиль и типы
+- Используем `black` (line-length 88) и `isort` для импортов
+- `flake8` для стиля, `mypy --strict` для типизации
+- Аннотации типов обязательны для публичных API и сервисов
+- Docstrings формата Google для публичных функций/классов
+- Именование: `PascalCase` для классов, `snake_case` для функций/переменных, `UPPER_SNAKE_CASE` для констант
+
+## Django-конвенции
+- Бизнес-логика — в `services.py`, вьюхи тонкие
+- Сериализация: валидация входов, детерминированные `to_representation`
+- URL с namespace (`bots:create`), настройки через env
+
+### DRF ViewSets (обязательно)
+- Используем `ViewSet`/`GenericViewSet` + миксины (`ListModelMixin`, `CreateModelMixin`, `RetrieveModelMixin`, `UpdateModelMixin`, `DestroyModelMixin`) вместо function-based views
+- Регистрируем только через DRF routers; единый префикс версионирования `/api/v1/`
+- У каждого ViewSet настраиваем: `permission_classes`, `authentication_classes`, `throttle_classes`
+- Обязательная пагинация для коллекций: PageNumber (дефолтный `page_size`, параметр `page_size` ограничен максимумом)
+- Фильтрация через `django-filter`: объявляем `filterset_class` (или `filterset_fields`) для явной фильтрации; не фильтруем по неописанным полям
+- Поиск/сортировка: `search_fields` и `ordering_fields` по необходимости; дефолтный `ordering`
+- Сериализаторы: отдельные для list/detail при различиях (`get_serializer_class`)
+- Валидации: бизнес-правила — в сервисах; сериализаторы только про форму данных
+- Ответы: единый формат ошибок DRF, 4xx для ошибок валидации, 5xx — только для неожиданных сбоев
+
+### Пагинация (обязательно где коллекции)
+- Дефолт: `PageNumberPagination`
+- Политика значений: `page_size` по умолчанию 20–50; `max_page_size` ≤ 200
+- Документируем параметры пагинации в OpenAPI
+
+### Фильтрация (там, где требуется)
+- Все фильтры — явные через `FilterSet`
+- Поддерживаем точные совпадения и необходимые lookups (`icontains`, `in`, `range` и т.п.)
+- Для дат/времени — только ISO 8601; таймзона UTC
+
+## Модели (обязательно)
+- Каждый `Field` имеет `verbose_name` и по возможности `help_text`; для FK — `db_index=True`
+- В `class Meta` задать `verbose_name` и `verbose_name_plural`; `ordering` по бизнес-надобности
+- `__str__` возвращает человекочитаемое краткое представление
+- Ограничения целостности: `unique_together`/`UniqueConstraint`, `CheckConstraint`
+- Явно указываем `related_name` для FK/M2M
+
+## Админка: чеклист перед добавлением модели
+- Нужно ли показывать модель в админке? Если да:
+  - Какие поля только для чтения (`readonly_fields`)?
+  - Какие фильтры/поиск в списке (`list_filter`, `search_fields`)?
+  - Какие инлайны нужны и по каким связям (`TabularInline/StackedInline`)?
+  - Нужны ли кастомные действия (actions) и экспорт?
+  - Ограничить доступ по ролям/правам
+
+## Ошибки и логирование
+- Собственные исключения в `common/exceptions.py`
+- Структурированное логирование (JSON), контекст: `user_id`, `bot_id`, `chat_id`
+- Ранние возвраты и guard-clauses, минимальная вложенность
+
+## Async/Sync
+- API-вьюхи — sync
+- Telegram handlers — async; доступ к ORM через адаптеры/сервисы, избегать блокировок
+- Внешние HTTP — асинхронные клиенты в хэндлерах
+
+## PR/CI требования
+- Пре-коммит: `black`, `isort`, `flake8`, `mypy`, быстрые тесты
+- Коммиты по Conventional Commits
+- Запрещено коммитить секреты/`.env`

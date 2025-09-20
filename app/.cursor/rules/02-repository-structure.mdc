@@ -1,0 +1,30 @@
+# Структура репозитория (app/)
+
+```
+app/
+├── apps/
+│   ├── users/
+│   ├── bots/
+│   ├── scenarios/
+│   └── chats/
+├── server/
+├── telegram_client/
+├── common/
+├── tests/
+├── docs/
+└── manage.py
+```
+
+## Размещение кода
+- Доменные правила и сценарии — в `apps/*/services.py`
+- API — DRF ViewSets в `apps/*/views.py`, сериализация в `serializers.py`
+- Сложные запросы — `repositories.py` или менеджеры моделей
+- Общие утилиты — `common/`
+- Интеграции Telegram — `telegram_client/`
+- Интеграционные и e2e тесты — `tests/`
+- Документация — `docs/`
+
+## Политики VCS
+- Не коммитить `db/data`, `db/backup`, `.env` и секреты
+- Добавить `.env.example` и инструкции в README
+- Миграции коммитить, ревью обязательны

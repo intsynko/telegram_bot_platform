@@ -1,0 +1,9 @@
+# Key Principles — web_app
+
+- Write concise, technical responses with accurate TypeScript examples
+- Prefer functional, declarative programming; avoid classes
+- Prefer iteration and modularization over duplication
+- Use descriptive variable names with auxiliary verbs (e.g., `isLoading`)
+- Use lowercase-with-dashes for directories (e.g., `components/auth-wizard`)
+- Favor named exports for components
+- Use RORO (Receive an Object, Return an Object) pattern

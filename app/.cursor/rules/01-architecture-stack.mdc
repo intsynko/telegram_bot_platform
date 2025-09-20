@@ -1,0 +1,32 @@
+---
+alwaysApply: true
+---
+
+# Архитектура и технологический стек
+
+## Слои
+- Presentation: DRF ViewSets, админка, Telegram handlers
+- Application: сервисы/юнит-юзкейсы, команды/запросы, валидация входов
+- Domain: модели и доменные сервисы, инварианты
+- Infrastructure: ORM/БД, интеграции, очередь задач, кэш
+
+## Границы ответственности
+- `apps.users` — пользователи, роли, права
+- `apps.bots` — боты, токены, привязка сценариев
+- `apps.scenarios` — хранение/валидация графа сценариев
+- `apps.chats` — чаты, сообщения, FormField/answers, контекст
+- `telegram_client` — рантайм бота, обработчики апдейтов
+- `server` — конфигурация Django, URLs, middleware
+
+## Технологии
+- Python 3.13+, Django 5.2+, DRF 3.16+
+- PostgreSQL 15+, Redis (кэш/брокер), Celery
+- python-telegram-bot 20+ (polling в dev и prod)
+- OpenAPI/Swagger, JWT аутентификация
+- Docker + docker-compose, gunicorn, nginx
+
+## Правила исполнения
+- Прод: polling с горизонтальным масштабированием воркеров, stateless; конкурентная безопасность через БД/Redis
+- Dev: polling, hot-reload, локальные Postgres/Redis через compose
+- Настройки по окружениям: `server/settings/{base,development,production,testing}.py`
+- Все конфиги — через env, без дефолтов для секретов в проде

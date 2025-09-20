@@ -1,0 +1,14 @@
+# Performance & Accessibility — web_app
+
+## Performance
+- Code-split routes and heavy components
+- Dynamic import for non-critical UI; prefetch on hover/visible
+- Optimize images (WebP), define sizes, lazy-load
+- Memoization: useMemo/useCallback only for heavy computations
+- Avoid unnecessary effects and re-renders; derive state from props
+
+## Accessibility
+- Semantic HTML; ARIA only when necessary
+- Contrast and focus states; keyboard navigation
+- Labels for inputs; associate errors with fields
+- Prefer native elements; manage roles responsibly

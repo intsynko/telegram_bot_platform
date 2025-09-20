@@ -1,0 +1,32 @@
+# Code Standards — web_app
+
+## JavaScript/TypeScript
+- Use TypeScript for all code; prefer `interface` over `type`
+- Avoid `enum`; use maps or union literals
+- Use `function` keyword for pure functions; omit semicolons
+- RORO pattern: receive object args, return object
+- Avoid unnecessary curly braces in conditionals; single-line if without braces
+
+```ts
+interface FetchUserArgs { id: string }
+interface FetchUserResult { user: User | null }
+
+export function fetchUser({ id }: FetchUserArgs): FetchUserResult {
+  if (!id) return { user: null }
+  const user = cache.get(id)
+  if (user) return { user }
+  return { user: null }
+}
+```
+
+## Naming
+- Variables with auxiliaries: `isLoading`, `hasError`, `shouldFetch`
+- Directories/files kebab-case
+- Named exports for components and helpers
+
+## File structure (per component)
+- Exported component
+- Subcomponents
+- Helpers
+- Static content
+- Types/interfaces at file end

@@ -1,0 +1,35 @@
+# React Patterns — web_app
+
+## Components
+- Functional components with `function` declarations and TypeScript interfaces
+- Declarative JSX; minimize imperative effects
+- Place static content and interfaces at file end; content constants outside render
+- Named exports; avoid default exports
+
+## Server/Client
+- Minimize `use client`; prefer RSC where possible
+- Wrap client components in `Suspense` with fallbacks
+- Dynamic import for non-critical components
+
+## Forms
+- `react-hook-form` + Zod; `useActionState` for server actions error flow
+- Model expected errors as return values; avoid try/catch for expected states
+
+## Images
+- Prefer WebP; specify width/height; lazy load non-critical images
+
+## Example
+```tsx
+export function UserCard({ user }: { user: User }) {
+  if (!user) return null
+  return (
+    <section>
+      <h3>{user.name}</h3>
+      <p>{user.email}</p>
+    </section>
+  )
+}
+
+// interfaces at end
+interface User { id: string; name: string; email: string }
+```

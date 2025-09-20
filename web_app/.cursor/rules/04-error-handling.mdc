@@ -1,0 +1,31 @@
+# Error Handling & Validation — web_app
+
+## Principles
+- Handle errors and edge cases at the beginning of functions
+- Use early returns and guard clauses; avoid deep nesting and unnecessary else
+- Place the happy path last; model expected errors as return values
+
+## Validation
+- Use Zod schemas for inputs and server actions
+- `useActionState` + `react-hook-form` to surface validation errors
+
+```ts
+import { z } from 'zod'
+
+export const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8)
+})
+```
+
+## Logging
+- Log errors with minimal PII; include correlation ids
+- Services must throw user-friendly errors; TanStack Query shows them to user
+
+## Error Boundaries
+- Use error boundaries for unexpected errors (`error.tsx`, `global-error.tsx` style where applicable)
+
+## Server Actions
+- Use `next-safe-action` for all server actions
+- Define input schemas with Zod; return `ActionResponse`
+- Avoid try/catch for expected errors; return typed error through action state

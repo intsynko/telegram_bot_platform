@@ -1,0 +1,37 @@
+# Repository Structure — web_app
+
+## Naming
+- Directories: kebab-case (e.g., `components/auth-wizard`)
+- Files: kebab-case (e.g., `user-card.tsx`, `use-user.ts`)
+- Components: `PascalCase` function names with named exports
+
+## Layout per feature
+- Exported component at top of file; subcomponents follow
+- Helpers next, static content after, interfaces/types at the end
+
+```
+src/
+├── components/
+│   └── auth-wizard/
+│       ├── index.tsx
+│       ├── subcomponents/
+│       │   └── step-email.tsx
+│       ├── helpers/
+│       │   └── build-payload.ts
+│       ├── static/
+│       │   └── copy.ts
+│       └── types.ts
+├── services/
+│   └── user-profile/
+│       ├── client.ts
+│       ├── queries.ts
+│       └── types.ts
+└── lib/
+    ├── zod-schemas.ts
+    ├── constants.ts
+    └── types.ts
+```
+
+## Exports
+- Prefer named exports; default exports discouraged
+- Barrel files only at directory root (`index.ts`), not nested

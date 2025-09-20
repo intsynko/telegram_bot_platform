@@ -1,0 +1,15 @@
+# Documentation — web_app
+
+## What to document
+- Component props and behavior (TS interfaces)
+- Service contracts and API shapes
+- Complex flows (auth, forms, error states)
+
+## How
+- Co-locate MDX/README per feature where useful
+- Storybook stories for components (controls, edge cases)
+- Typed examples in docs; keep in sync with code via TS types
+
+## Developer setup
+- Local run instructions, env variables, scripts
+- Testing commands and CI overview

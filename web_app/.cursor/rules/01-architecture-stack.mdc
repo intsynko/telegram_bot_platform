@@ -1,0 +1,22 @@
+# Architecture & Stack — web_app
+
+## Stack
+- TypeScript, React 18+, Vite or CRA existing setup
+- TanStack Query, react-hook-form, Zod
+- Next.js rules apply where relevant; avoid heavy CSR if SSR/SSG possible
+
+## Architecture
+- Feature-first structure with shared modules
+- `services/` for API clients and business logic; pure, testable functions
+- `components/` for dumb/presentational components; named exports
+- `pages/` for route-level composition (if applicable)
+- `hooks/` for reusable hooks (no business side-effects inside)
+- `lib/` for utils, constants, types
+
+## Directories
+- kebab-case names: `components/auth-wizard`, `services/user-profile`
+- Each feature: `index.tsx` (exported component), `subcomponents/`, `helpers/`, `static/`, `types.ts`
+
+## Exports
+- Named exports for components and helpers
+- Barrel files allowed only at feature root
