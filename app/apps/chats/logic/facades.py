@@ -14,23 +14,38 @@ def create_chat(
     username: str = None
 ) -> Chat:
     """Создание нового чата"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    chat = Chat.objects.create(
+        telegram_user_id=telegram_user_id,
+        telegram_chat_id=telegram_chat_id,
+        telegram_username=username,
+        bot=bot,
+        context={}
+    )
+    return chat
 
 
 def update_chat_context(chat: Chat, context: dict) -> Chat:
     """Обновление контекста чата"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    chat.context = context
+    chat.save()
+    return chat
 
 
 def add_message_to_chat(chat: Chat, text: str, is_user: bool) -> Message:
     """Добавление сообщения в чат"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    message = Message.objects.create(
+        chat=chat,
+        text=text,
+        is_user_message=is_user
+    )
+    return message
 
 
 def add_form_field(chat: Chat, name: str, value: str) -> FormField:
     """Добавление/обновление поля формы"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    form_field, created = FormField.objects.update_or_create(
+        chat=chat,
+        name=name,
+        defaults={'value': value}
+    )
+    return form_field
