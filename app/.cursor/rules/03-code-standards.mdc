@@ -20,6 +20,7 @@
 - Docstrings — только описание метода, без аргументов/возвращаемых значений/ошибок (есть типизация)
 - Обработка исключений — только для конкретных строк, не блоков кода, не ловить общие, только то что ожидаем
 - __init__ - пустой
+- facades должны использовать selectors где запрашивают что то из бд
 
 ### DRF ViewSets (обязательно)
 - Используем `ViewSet`/`GenericViewSet` + миксины (`ListModelMixin`, `CreateModelMixin`, `RetrieveModelMixin`, `UpdateModelMixin`, `DestroyModelMixin`) вместо function-based views

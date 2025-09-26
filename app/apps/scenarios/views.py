@@ -6,6 +6,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from .models import Scenario
 from .serializers import ScenarioSerializer, ScenarioDetailSerializer
+from .logic import facades, selectors
 
 
 class ScenariosViewSet(viewsets.ModelViewSet):
@@ -13,13 +14,10 @@ class ScenariosViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = Scenario.objects.all()
         if self.action == 'copy':
-            qs = qs.filter(is_template=True)
+            return selectors.get_template_scenarios()
         else:
-            qs = qs.filter(owner=self.request.user, is_template=False)
-        return qs
-        # return Scenario.objects.filter(owner=self.request.user, is_template=False)
+            return selectors.get_user_scenarios(self.request.user)
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'update', 'partial_update']:
@@ -34,17 +32,13 @@ class ScenariosViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def copy(self, request, pk: int):
-        user = self.get_object()
-        scenario = Scenario.objects.filter(pk=pk, is_template=True).first()
-        if scenario is None:
-            raise NotFound()
-        new_scenario = Scenario.objects.create(
-            graph=scenario.graph,
-            name=f"{scenario.name} - Копия",
-            owner=request.user,
-        )
-        serializer = ScenarioDetailSerializer(instance=new_scenario)
-        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        """Копирование шаблонного сценария"""
+        try:
+            new_scenario = facades.copy_template_scenario(pk, request.user)
+            serializer = ScenarioDetailSerializer(instance=new_scenario)
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        except ValueError:
+            raise NotFound("Template scenario not found")
 
 
 class ScenariosExampleViewSet(
@@ -56,7 +50,7 @@ class ScenariosExampleViewSet(
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        return Scenario.objects.filter(is_template=True)
+        return selectors.get_template_scenarios()
 
     def get_serializer_class(self):
         if self.action in ['retrieve']:

@@ -12,23 +12,25 @@ User = get_user_model()
 
 def get_user_scenarios(user: User) -> QuerySet[Scenario]:
     """Получить сценарии пользователя (не шаблоны)"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    return Scenario.objects.filter(owner=user, is_template=False)
 
 
 def get_template_scenarios() -> QuerySet[Scenario]:
     """Получить все шаблонные сценарии"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    return Scenario.objects.filter(is_template=True)
 
 
 def get_scenario_with_access_check(scenario_id: int, user: User) -> Optional[Scenario]:
     """Получить сценарий с проверкой доступа"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    try:
+        return Scenario.objects.get(id=scenario_id, owner=user, is_template=False)
+    except Scenario.DoesNotExist:
+        return None
 
 
 def get_template_scenario(template_id: int) -> Optional[Scenario]:
     """Получить шаблонный сценарий"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    try:
+        return Scenario.objects.get(id=template_id, is_template=True)
+    except Scenario.DoesNotExist:
+        return None
