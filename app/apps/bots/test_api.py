@@ -90,7 +90,7 @@ class BotAPITestCase(APITestCase):
         self.assertIn('scenario', response.data)
         self.assertIn('is_running', response.data)
 
-    @patch('apps.bots.views.start_bot')
+    @patch('apps.bots.logic.facades.start_bot')
     def test_run_bot_with_scenario(self, mock_start_bot):
         """Тест запуска бота со сценарием"""
         mock_start_bot.return_value = True
@@ -121,7 +121,7 @@ class BotAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['error'], 'No scenario selected')
 
-    @patch('apps.bots.views.stop_bot')
+    @patch('apps.bots.logic.facades.stop_bot')
     def test_stop_bot(self, mock_stop_bot):
         """Тест остановки бота"""
         mock_stop_bot.return_value = True
