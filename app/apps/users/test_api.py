@@ -16,7 +16,7 @@ class UserAuthAPITestCase(APITestCase):
     def setUp(self):
         self.register_url = '/api/users/auth/register/'
         self.login_url = '/api/users/auth/login/'
-        self.user_url = '/api/users/auth/user/'
+        self.user_url = '/api/users/users/me/'
         self.logout_url = '/api/users/auth/logout/'
         
         self.user_data = {

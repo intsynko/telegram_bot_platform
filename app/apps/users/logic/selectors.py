@@ -10,11 +10,16 @@ User = get_user_model()
 
 def get_user_by_email(email: str) -> Optional[User]:
     """Получить пользователя по email"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    try:
+        return User.objects.get(email=email)
+    except User.DoesNotExist:
+        return None
 
 
 def get_user_profile(user: User) -> dict:
     """Получить данные профиля пользователя"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    return {
+        'id': user.id,
+        'email': user.email,
+        'username': user.username,
+    }

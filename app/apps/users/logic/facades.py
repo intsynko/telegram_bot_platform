@@ -11,23 +11,24 @@ User = get_user_model()
 
 def register_user(email: str, password: str) -> User:
     """Регистрация нового пользователя"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    user = User.objects.create_user(
+        username=email,
+        email=email,
+        password=password
+    )
+    return user
 
 
 def authenticate_user(email: str, password: str) -> Optional[User]:
     """Аутентификация пользователя по email/паролю"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    return authenticate(username=email, password=password)
 
 
 def login_user_session(request: HttpRequest, user: User) -> None:
     """Создание пользовательской сессии"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    login(request, user)
 
 
 def logout_user_session(request: HttpRequest) -> None:
     """Завершение пользовательской сессии"""
-    # TODO: Реализовать в следующем этапе
-    pass
+    logout(request)
