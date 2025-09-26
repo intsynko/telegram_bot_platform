@@ -1,10 +1,23 @@
 # Тестирование и качество
 
 ## Виды тестов
-- Unit: сервисы, доменные функции, валидации
-- Integration: API (DRF), ORM/БД взаимодействия
+- Unit: фасады, селекторы
+- Integration: api
 - E2E: ключевые пользовательские флоу (создание бота → сценарий → диалог)
 - Contract: интеграции с внешними API (Telegram)
+
+# Структура тестов
+app/
+├── apps/
+│   ├── app/
+│   │  │── test/
+│   │  └───── test_api.py
+│   │  └───── test_facedes.py
+│   └──────── test_selectors.py
+├── tests/
+│  ├─- test_e2e/
+│  └───- test_createion.py
+
 
 ## Инструменты
 - `pytest`, `pytest-django`, `factory_boy`, `faker`
@@ -18,8 +31,3 @@
 - AAA (arrange-act-assert), детерминированность, фиксированные сиды RNG
 - Моки только для внешних сервисов; база — реальная тестовая
 - Ясные названия `test_{what}_{when}_{expected}`
-
-## CI-гейты
-- linters + mypy + pytest + coverage threshold
-- Миграции прогоняются перед тестами
-- Генерация отчета покрытия и артефактов
