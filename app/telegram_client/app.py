@@ -178,104 +178,162 @@ async def run_scenario(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return await ask_next_question(update, context)
 
 
-async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    scenario_id = context.user_data.get('scenario_id')
+def get_current_node(context: ContextTypes.DEFAULT_TYPE):
+    """Получить текущий узел из контекста"""
     node_id = context.user_data.get('node', None)
     if node_id is None:
-        return FINISHED
-    else:
-        node = get_node_by_id(node_id, context.user_data['graph'])
+        return None
+    return get_node_by_id(node_id, context.user_data['graph'])
 
-    if node["type"] == 'message':
-        message_text = format_str(node["data"]["text"], context.user_data['answers'])
-        await update.message.reply_text(message_text)
+
+async def move_to_next_node(node_id: str, context: ContextTypes.DEFAULT_TYPE, condition_value=None, for_btn=False):
+    """Переместиться к следующему узлу"""
+    next_node_id = get_next_node_id_by_source_id(
+        node_id, 
+        context.user_data['graph'], 
+        condition_value=condition_value,
+        for_btn=for_btn
+    )
+    context.user_data["node"] = next_node_id
+
+
+async def process_message_node(update: Update, context: ContextTypes.DEFAULT_TYPE, node: dict):
+    """Обработать узел типа message"""
+    message_text = format_str(node["data"]["text"], context.user_data['answers'])
+    await update.message.reply_text(message_text)
+    # Сохраняем сообщение бота
+    await save_bot_message(context.user_data.get('chat_id'), message_text)
+    await move_to_next_node(node["id"], context)
+    return await ask_next_question(update, context)
+
+
+async def process_condition_node(update: Update, context: ContextTypes.DEFAULT_TYPE, node: dict):
+    """Обработать узел типа condition"""
+    condition_result = check_condition(context.user_data['answers'], node["data"]["expression"])
+    await move_to_next_node(node["id"], context, condition_value=condition_result)
+    return await ask_next_question(update, context)
+
+
+async def process_notification_node(update: Update, context: ContextTypes.DEFAULT_TYPE, node: dict):
+    """Обработать узел типа notification"""
+    text = format_str(node["data"]["message"], context.user_data['answers'])
+    if node["data"]["type"] == 'telegram':
+        tg_connector = TelegramConnector(os.environ.get("SYSTEM_BOT_TOKEN"), node["data"]["chat_id"])
+        tg_connector.send_message(text)
+    elif node["data"]["type"] == 'email':
+        pass
+    # Сохраняем сообщение бота (уведомление)
+    await save_bot_message(context.user_data.get('chat_id'), f"[Уведомление] {text}")
+    await move_to_next_node(node["id"], context)
+    return await ask_next_question(update, context)
+
+
+async def process_datawrite_node(update: Update, context: ContextTypes.DEFAULT_TYPE, node: dict):
+    """Обработать узел типа datawrite"""
+    for pair in node["data"]["pairs"]:
+        variable, value = pair["variable"], pair["value"]
+        context.user_data['answers'][variable] = value
+    
+    # Сохраняем обновленные answers в FormField
+    if context.user_data.get('chat_id'):
+        await save_answers_to_form_fields(context.user_data['chat_id'], context.user_data['answers'])
+    
+    await move_to_next_node(node["id"], context)
+    return await ask_next_question(update, context)
+
+
+async def process_break_node(update: Update, context: ContextTypes.DEFAULT_TYPE, node: dict):
+    """Обработать узел типа break"""
+    context.user_data['node'] = get_start(context.user_data['graph'])["id"]
+    return ConversationHandler.END
+
+
+async def process_form_node(update: Update, context: ContextTypes.DEFAULT_TYPE, node: dict):
+    """Обработать узел типа form"""
+    context.user_data['form'] = node
+    if not node["data"]["fields"]:
+        error_message = 'В форме нет полей.'
+        await update.message.reply_text(error_message)
         # Сохраняем сообщение бота
-        await save_bot_message(context.user_data.get('chat_id'), message_text)
-        context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
+        await save_bot_message(context.user_data.get('chat_id'), error_message)
+        await move_to_next_node(node["id"], context)
         return await ask_next_question(update, context)
-    if node["type"] == 'condition':
-        if check_condition(context.user_data['answers'], node["data"]["expression"]):
-            context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'], condition_value=True)
-        else:
-            context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'], condition_value=False)
-        return await ask_next_question(update, context)
-    if node["type"] == "notification":
-        text = format_str(node["data"]["message"], context.user_data['answers'])
-        if node["data"]["type"] == 'telegram':
-            tg_connector = TelegramConnector(os.environ.get("SYSTEM_BOT_TOKEN"), node["data"]["chat_id"])
-            tg_connector.send_message(text)
-        elif node["data"]["type"] == 'email':
-            pass
-        # Сохраняем сообщение бота (уведомление)
-        await save_bot_message(context.user_data.get('chat_id'), f"[Уведомление] {text}")
-        context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
-        return await ask_next_question(update, context)
-    if node["type"] == 'datawrite':
-        for pair in node["data"]["pairs"]:
-            variable, value = pair["variable"], pair["value"]
-            context.user_data['answers'][variable] = value
-        
-        # Сохраняем обновленные answers в FormField
+    
+    if not context.user_data.get('fields'):
+        context.user_data['fields'] = node["data"]['fields']
+        context.user_data['field_idx'] = 0
+    
+    result = await ask_form_field(update, context)
+    if result == FINISHED:
+        del context.user_data['fields']
+        # Сохраняем answers после завершения формы
         if context.user_data.get('chat_id'):
             await save_answers_to_form_fields(context.user_data['chat_id'], context.user_data['answers'])
-        
-        context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
         return await ask_next_question(update, context)
-    elif node["type"] == 'form':
-        context.user_data['form'] = node
-        if not node["data"]["fields"]:
-            error_message = 'В форме нет полей.'
-            await update.message.reply_text(error_message)
-            # Сохраняем сообщение бота
-            await save_bot_message(context.user_data.get('chat_id'), error_message)
-            context.user_data["node"] = get_next_node_id_by_source_id(node["id"], context.user_data['graph'])
-            return await ask_next_question(update, context)
-        if not context.user_data.get('fields'):
-            context.user_data['fields'] = node["data"]['fields']
-            context.user_data['field_idx'] = 0
-        result = await ask_form_field(update, context)
-        if result == FINISHED:
-            del context.user_data['fields']
-            # Сохраняем answers после завершения формы
-            if context.user_data.get('chat_id'):
-                await save_answers_to_form_fields(context.user_data['chat_id'], context.user_data['answers'])
-            return await ask_next_question(update, context)
-        return result
-    elif node["type"] == 'menu':
-        if context.user_data.get('asked'):
-            del context.user_data['asked']
-            value = update.message.text
-            for field in node["data"]["buttons"]:
-                if value == field["label"]:
-                    # Сохраняем выбор пользователя в answers, если нужно
-                    if 'save_to_answers' in node["data"] and node["data"]["save_to_answers"]:
-                        answers_key = node["data"].get("answers_key", "menu_choice")
-                        context.user_data['answers'][answers_key] = value
-                        # Сохраняем в FormField
-                        if context.user_data.get('chat_id'):
-                            await save_answers_to_form_fields(context.user_data['chat_id'], context.user_data['answers'])
-                    
-                    context.user_data["node"] = get_next_node_id_by_source_id(field["id"], context.user_data['graph'], for_btn=True)
-                    return await ask_next_question(update, context)
-        keyboard = ReplyKeyboardMarkup([
-            [
-                KeyboardButton(field["label"])
-                for field in node["data"]["buttons"]
-                # if (
-                #     field.show_condition
-                #     and check_condition(context.user_data['answers'], field.show_condition)
-                # )
-            ]
-        ], one_time_keyboard=True, resize_keyboard=True)
-        text = format_str(node["data"]["label"], context.user_data['answers'])
-        await update.message.reply_text(text, reply_markup=keyboard)
-        # Сохраняем сообщение бота
-        await save_bot_message(context.user_data.get('chat_id'), text)
-        context.user_data['asked'] = True
-    elif node["type"] == 'break':
-        context.user_data['node'] = get_start(context.user_data['graph'])["id"]
-        return ConversationHandler.END
+    return result
+
+
+async def process_menu_node(update: Update, context: ContextTypes.DEFAULT_TYPE, node: dict):
+    """Обработать узел типа menu"""
+    if context.user_data.get('asked'):
+        del context.user_data['asked']
+        value = update.message.text
+        for field in node["data"]["buttons"]:
+            if value == field["label"]:
+                # Сохраняем выбор пользователя в answers, если нужно
+                if 'save_to_answers' in node["data"] and node["data"]["save_to_answers"]:
+                    answers_key = node["data"].get("answers_key", "menu_choice")
+                    context.user_data['answers'][answers_key] = value
+                    # Сохраняем в FormField
+                    if context.user_data.get('chat_id'):
+                        await save_answers_to_form_fields(context.user_data['chat_id'], context.user_data['answers'])
+                
+                await move_to_next_node(field["id"], context, for_btn=True)
+                return await ask_next_question(update, context)
+    
+    keyboard = ReplyKeyboardMarkup([
+        [
+            KeyboardButton(field["label"])
+            for field in node["data"]["buttons"]
+            # if (
+            #     field.show_condition
+            #     and check_condition(context.user_data['answers'], field.show_condition)
+            # )
+        ]
+    ], one_time_keyboard=True, resize_keyboard=True)
+    text = format_str(node["data"]["label"], context.user_data['answers'])
+    await update.message.reply_text(text, reply_markup=keyboard)
+    # Сохраняем сообщение бота
+    await save_bot_message(context.user_data.get('chat_id'), text)
+    context.user_data['asked'] = True
+
+
+async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Главная функция обработки узлов сценария"""
+    # Получаем текущий узел
+    node = get_current_node(context)
+    if node is None:
+        return FINISHED
+    
+    # Диспетчер узлов - делегируем обработку специализированным функциям
+    node_type = node["type"]
+    
+    if node_type == 'message':
+        return await process_message_node(update, context, node)
+    elif node_type == 'condition':
+        return await process_condition_node(update, context, node)
+    elif node_type == 'notification':
+        return await process_notification_node(update, context, node)
+    elif node_type == 'datawrite':
+        return await process_datawrite_node(update, context, node)
+    elif node_type == 'form':
+        return await process_form_node(update, context, node)
+    elif node_type == 'menu':
+        return await process_menu_node(update, context, node)
+    elif node_type == 'break':
+        return await process_break_node(update, context, node)
     else:
+        # Обработка неизвестного типа узла
         error_message = 'Неизвестный тип действия или не задана форма.'
         await update.message.reply_text(error_message)
         # Сохраняем сообщение бота
