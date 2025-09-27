@@ -10,6 +10,7 @@ django.setup()
 from apps.scenarios.models import Scenario
 from apps.bots.models import Bot
 from apps.chats.models import Chat, Message, FormField
+from apps.chats.logic import facades, selectors
 
 
 @sync_to_async
@@ -27,97 +28,66 @@ def get_scenario_by_id(scenario_id):
 @sync_to_async
 def get_or_create_chat(telegram_user_id, telegram_username, telegram_chat_id, bot_id, context=None):
     """Получить или создать чат для пользователя"""
-    chat, created = Chat.objects.get_or_create(
+    bot = Bot.objects.get(id=bot_id)
+    return facades.get_or_create_chat(
+        telegram_user_id=telegram_user_id,
         telegram_chat_id=telegram_chat_id,
-        bot_id=bot_id,
-        defaults={
-            'telegram_user_id': telegram_user_id,
-            'telegram_username': telegram_username,
-            'context': context or {}
-        }
+        bot=bot,
+        username=telegram_username,
+        context=context
     )
-    return chat, created
 
 
 @sync_to_async
 def create_message(chat_id, text, is_user_message=True):
     """Создать сообщение в чате"""
-    message = Message.objects.create(
-        chat_id=chat_id,
+    chat = Chat.objects.get(id=chat_id)
+    return facades.add_message_to_chat(
+        chat=chat,
         text=text,
-        is_user_message=is_user_message
+        is_user=is_user_message
     )
-    return message
 
 
 @sync_to_async
 def update_chat_context(chat_id, context):
     """Обновить контекст чата"""
     chat = Chat.objects.get(id=chat_id)
-    chat.context = context
-    chat.save()
-    return chat
+    return facades.update_chat_context(chat, context)
 
 
 @sync_to_async
 def get_chat_by_telegram_data(telegram_chat_id, bot_id):
     """Получить чат по telegram_chat_id и bot_id"""
-    try:
-        return Chat.objects.get(telegram_chat_id=telegram_chat_id, bot_id=bot_id)
-    except Chat.DoesNotExist:
-        return None
+    return selectors.get_chat_by_telegram_data(telegram_chat_id, bot_id)
 
 
 @sync_to_async
 def save_or_update_form_field(chat_id, field_name, field_value):
     """Сохранить или обновить значение поля формы"""
-    form_field, created = FormField.objects.get_or_create(
-        chat_id=chat_id,
-        name=field_name,
-        defaults={'value': field_value}
-    )
-    if not created:
-        form_field.value = field_value
-        form_field.save()
-    return form_field
+    chat = Chat.objects.get(id=chat_id)
+    return facades.add_form_field(chat, field_name, field_value)
 
 
 @sync_to_async
 def get_form_fields_by_chat(chat_id):
     """Получить все поля формы для чата"""
-    return list(FormField.objects.filter(chat_id=chat_id).order_by('created_at'))
+    return list(selectors.get_chat_form_fields(chat_id))
 
 
 @sync_to_async
 def get_form_field_value(chat_id, field_name):
     """Получить значение конкретного поля формы"""
-    try:
-        form_field = FormField.objects.get(chat_id=chat_id, name=field_name)
-        return form_field.value
-    except FormField.DoesNotExist:
-        return None
+    return selectors.get_form_field_value(chat_id, field_name)
 
 
 @sync_to_async
 def get_chat_context(telegram_chat_id, bot_id):
     """Получить контекст чата для восстановления состояния бота"""
-    try:
-        chat = Chat.objects.get(telegram_chat_id=telegram_chat_id, bot_id=bot_id)
-        return {
-            'chat_id': chat.id,
-            'context': chat.context,
-            'telegram_user_id': chat.telegram_user_id,
-            'telegram_username': chat.telegram_username
-        }
-    except Chat.DoesNotExist:
-        return None
+    return selectors.get_chat_context_data(telegram_chat_id, bot_id)
 
 
 @sync_to_async
 def get_chat_form_fields(chat_id):
     """Получить все поля формы для чата"""
-    try:
-        form_fields = FormField.objects.filter(chat_id=chat_id)
-        return {field.name: field.value for field in form_fields}
-    except:
-        return {}
+    return selectors.get_chat_form_fields_dict(chat_id)

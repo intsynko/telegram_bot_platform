@@ -49,3 +49,23 @@ def add_form_field(chat: Chat, name: str, value: str) -> FormField:
         defaults={'value': value}
     )
     return form_field
+
+
+def get_or_create_chat(
+    telegram_user_id: int,
+    telegram_chat_id: int,
+    bot: Bot,
+    username: str = None,
+    context: dict = None
+) -> tuple[Chat, bool]:
+    """Получить или создать чат для пользователя"""
+    chat, created = Chat.objects.get_or_create(
+        telegram_chat_id=telegram_chat_id,
+        bot=bot,
+        defaults={
+            'telegram_user_id': telegram_user_id,
+            'telegram_username': username,
+            'context': context or {}
+        }
+    )
+    return chat, created
