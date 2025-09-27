@@ -124,88 +124,21 @@ async def restore_chat_context(telegram_chat_id, bot_id, context):
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Создаем или получаем чат для пользователя
-    bot_id = os.environ.get("BOT_ID")
-    telegram_user_id = update.effective_user.id
-    telegram_username = update.effective_user.username
-    telegram_chat_id = update.effective_chat.id
+    # Обеспечиваем существование чата и восстанавливаем контекст
+    await ensure_chat_exists(update, context)
     
-    # Пытаемся восстановить контекст из базы данных
-    context_restored = await restore_chat_context(telegram_chat_id, bot_id, context)
-    
-    if not context_restored:
-        # Если контекст не восстановлен, создаем новый чат
-        chat, created = await django_client.get_or_create_chat(
-            telegram_user_id=telegram_user_id,
-            telegram_username=telegram_username,
-            telegram_chat_id=telegram_chat_id,
-            bot_id=bot_id,
-            context={}
-        )
-        
-        # Сохраняем chat_id в контексте пользователя
-        context.user_data['chat_id'] = chat.id
-    else:
-        # Контекст восстановлен, обновляем данные пользователя если изменились
-        chat, created = await django_client.get_or_create_chat(
-            telegram_user_id=telegram_user_id,
-            telegram_username=telegram_username,
-            telegram_chat_id=telegram_chat_id,
-            bot_id=bot_id,
-            context=context.user_data.get('context', {})
-        )
-        context.user_data['chat_id'] = chat.id
-    
-    # Сохраняем сообщение пользователя
-    if update.message and update.message.text:
-        await django_client.create_message(
-            chat_id=context.user_data['chat_id'],
-            text=update.message.text,
-            is_user_message=True
-        )
+    # Сохраняем сообщение пользователя (включая команды)
+    await save_user_message(update, context, exclude_commands=False)
     
     return await run_scenario(update, context)
 
 
 async def run_scenario(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Если нет chat_id, пытаемся восстановить контекст или создаем новый чат
-    if not context.user_data.get('chat_id'):
-        bot_id = os.environ.get("BOT_ID")
-        telegram_user_id = update.effective_user.id
-        telegram_username = update.effective_user.username
-        telegram_chat_id = update.effective_chat.id
-        
-        # Пытаемся восстановить контекст
-        context_restored = await restore_chat_context(telegram_chat_id, bot_id, context)
-        
-        if not context_restored:
-            # Если контекст не восстановлен, создаем новый чат
-            chat, created = await django_client.get_or_create_chat(
-                telegram_user_id=telegram_user_id,
-                telegram_username=telegram_username,
-                telegram_chat_id=telegram_chat_id,
-                bot_id=bot_id,
-                context={}
-            )
-            context.user_data['chat_id'] = chat.id
-        else:
-            # Контекст восстановлен, обновляем данные пользователя
-            chat, created = await django_client.get_or_create_chat(
-                telegram_user_id=telegram_user_id,
-                telegram_username=telegram_username,
-                telegram_chat_id=telegram_chat_id,
-                bot_id=bot_id,
-                context=context.user_data.get('context', {})
-            )
-            context.user_data['chat_id'] = chat.id
+    # Обеспечиваем существование чата и восстанавливаем контекст
+    await ensure_chat_exists(update, context)
     
-    # Сохраняем сообщение пользователя, если это не команда /start
-    if update.message and update.message.text and not update.message.text.startswith('/'):
-        await django_client.create_message(
-            chat_id=context.user_data['chat_id'],
-            text=update.message.text,
-            is_user_message=True
-        )
+    # Сохраняем сообщение пользователя (исключая команды)
+    await save_user_message(update, context, exclude_commands=True)
     
     if not context.user_data.get('scenario_id'):
         id = os.environ.get("BOT_ID")
@@ -349,6 +282,60 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await save_bot_message(context.user_data.get('chat_id'), error_message)
         context.user_data['node'] = get_start(context.user_data['graph'])["id"]
         return await run_scenario(update, context)
+
+
+async def save_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE, exclude_commands: bool = False):
+    """Сохранить пользовательское сообщение в БД"""
+    if not update.message or not update.message.text:
+        return
+    
+    # Если нужно исключить команды и это команда - не сохраняем
+    if exclude_commands and update.message.text.startswith('/'):
+        return
+    
+    await django_client.create_message(
+        chat_id=context.user_data['chat_id'],
+        text=update.message.text,
+        is_user_message=True
+    )
+
+
+async def ensure_chat_exists(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обеспечить существование чата и восстановить контекст"""
+    # Если chat_id уже есть, ничего не делаем
+    if context.user_data.get('chat_id'):
+        return
+    
+    # Получаем данные из update
+    bot_id = os.environ.get("BOT_ID")
+    telegram_user_id = update.effective_user.id
+    telegram_username = update.effective_user.username
+    telegram_chat_id = update.effective_chat.id
+    
+    # Пытаемся восстановить контекст из базы данных
+    context_restored = await restore_chat_context(telegram_chat_id, bot_id, context)
+    
+    if not context_restored:
+        # Если контекст не восстановлен, создаем новый чат
+        chat, created = await django_client.get_or_create_chat(
+            telegram_user_id=telegram_user_id,
+            telegram_username=telegram_username,
+            telegram_chat_id=telegram_chat_id,
+            bot_id=bot_id,
+            context={}
+        )
+        # Сохраняем chat_id в контексте пользователя
+        context.user_data['chat_id'] = chat.id
+    else:
+        # Контекст восстановлен, обновляем данные пользователя если изменились
+        chat, created = await django_client.get_or_create_chat(
+            telegram_user_id=telegram_user_id,
+            telegram_username=telegram_username,
+            telegram_chat_id=telegram_chat_id,
+            bot_id=bot_id,
+            context=context.user_data.get('context', {})
+        )
+        context.user_data['chat_id'] = chat.id
 
 
 def run_telegram_bot():
