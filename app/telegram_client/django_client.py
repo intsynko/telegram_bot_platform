@@ -41,9 +41,8 @@ def get_or_create_chat(telegram_user_id, telegram_username, telegram_chat_id, bo
 @sync_to_async
 def create_message(chat_id, text, is_user_message=True):
     """Создать сообщение в чате"""
-    chat = Chat.objects.get(id=chat_id)
     return facades.add_message_to_chat(
-        chat=chat,
+        chat_id=chat_id,
         text=text,
         is_user=is_user_message
     )
@@ -65,8 +64,7 @@ def get_chat_by_telegram_data(telegram_chat_id, bot_id):
 @sync_to_async
 def save_or_update_form_field(chat_id, field_name, field_value):
     """Сохранить или обновить значение поля формы"""
-    chat = Chat.objects.get(id=chat_id)
-    return facades.add_form_field(chat, field_name, field_value)
+    return facades.add_form_field(chat_id, field_name, field_value)
 
 
 @sync_to_async

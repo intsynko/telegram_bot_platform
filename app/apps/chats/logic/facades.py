@@ -31,24 +31,32 @@ def update_chat_context(chat: Chat, context: dict) -> Chat:
     return chat
 
 
-def add_message_to_chat(chat: Chat, text: str, is_user: bool) -> Message:
+def add_message_to_chat(chat_id: int, text: str, is_user: bool) -> Message:
     """Добавление сообщения в чат"""
-    message = Message.objects.create(
-        chat=chat,
-        text=text,
-        is_user_message=is_user
-    )
-    return message
+    try:
+        chat = Chat.objects.get(id=chat_id)
+        message = Message.objects.create(
+            chat=chat,
+            text=text,
+            is_user_message=is_user
+        )
+        return message
+    except Chat.DoesNotExist:
+        raise ValueError(f"Chat with id {chat_id} does not exist")
 
 
-def add_form_field(chat: Chat, name: str, value: str) -> FormField:
+def add_form_field(chat_id: int, name: str, value: str) -> FormField:
     """Добавление/обновление поля формы"""
-    form_field, created = FormField.objects.update_or_create(
-        chat=chat,
-        name=name,
-        defaults={'value': value}
-    )
-    return form_field
+    try:
+        chat = Chat.objects.get(id=chat_id)
+        form_field, created = FormField.objects.update_or_create(
+            chat=chat,
+            name=name,
+            defaults={'value': value}
+        )
+        return form_field
+    except Chat.DoesNotExist:
+        raise ValueError(f"Chat with id {chat_id} does not exist")
 
 
 def get_or_create_chat(
