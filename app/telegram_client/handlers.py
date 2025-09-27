@@ -4,11 +4,9 @@
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
+from telegram_client.logic.form import FINISHED as FORM_FINISHED
 from telegram_client.context import save_answers_to_form_fields
 from telegram_client.utils import format_str, check_condition, get_start, get_next_node_id_by_source_id, ask_form_field
-
-# Константы
-FINISHED = ConversationHandler.END
 
 # Сигналы для управления потоком выполнения
 CONTINUE_SCENARIO = "continue_scenario"  # Продолжить выполнение сценария
@@ -107,12 +105,12 @@ async def process_form_node(update: Update, context: ContextTypes.DEFAULT_TYPE, 
     # Обрабатываем форму
 
     result = await ask_form_field(update, context)
-    if result == FINISHED:
+    if result == FORM_FINISHED:
         del context.user_data['fields']
         # Сохраняем answers после завершения формы
         if context.user_data.get('chat_id'):
             await save_answers_to_form_fields(context.user_data['chat_id'], context.user_data['answers'])
-        await move_to_next_node(node["id"], context)
+        
         return CONTINUE_SCENARIO
     
     # Если форма не завершена, ожидаем ввод пользователя

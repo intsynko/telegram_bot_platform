@@ -1,248 +1,175 @@
 """
-Моки и фикстуры для тестирования telegram_client
+Моки для тестирования telegram_client
 """
 from unittest.mock import Mock, AsyncMock
+from typing import Dict, Any, Optional
 
 
-class MockTelegramUser:
-    """Мок для telegram.User"""
-    def __init__(self, user_id=123456789, username='testuser', first_name='Test', last_name='User'):
-        self.id = user_id
-        self.username = username
-        self.first_name = first_name
-        self.last_name = last_name
-        self.is_bot = False
+class MockUpdate:
+    """Мок для Telegram Update"""
+    
+    def __init__(self, message_text: str = "test message", user_id: int = 123, 
+                 chat_id: int = 456, username: str = "testuser"):
+        self.message = Mock()
+        self.message.text = message_text
+        self.message.reply_text = AsyncMock()
+        
+        self.effective_user = Mock()
+        self.effective_user.id = user_id
+        self.effective_user.username = username
+        
+        self.effective_chat = Mock()
+        self.effective_chat.id = chat_id
 
 
-class MockTelegramChat:
-    """Мок для telegram.Chat"""
-    def __init__(self, chat_id=987654321, chat_type='private'):
-        self.id = chat_id
-        self.type = chat_type
-
-
-class MockTelegramMessage:
-    """Мок для telegram.Message"""
-    def __init__(self, message_id=1, text='/start', user=None, chat=None):
-        self.message_id = message_id
-        self.text = text
-        self.from_user = user or MockTelegramUser()
-        self.chat = chat or MockTelegramChat()
-        self.reply_text = AsyncMock()
-
-
-class MockTelegramUpdate:
-    """Мок для telegram.Update"""
-    def __init__(self, update_id=1, message=None, user=None, chat=None):
-        self.update_id = update_id
-        self.message = message or MockTelegramMessage(
-            text='/start',
-            user=user or MockTelegramUser(),
-            chat=chat or MockTelegramChat()
-        )
-        self.effective_user = self.message.from_user
-        self.effective_chat = self.message.chat
-
-
-class MockTelegramContext:
-    """Мок для telegram.ext.ContextTypes.DEFAULT_TYPE"""
-    def __init__(self, user_data=None, bot_data=None, chat_data=None):
+class MockContext:
+    """Мок для Telegram ContextTypes.DEFAULT_TYPE"""
+    
+    def __init__(self, user_data: Dict[str, Any] = None):
         self.user_data = user_data or {}
-        self.bot_data = bot_data or {}
-        self.chat_data = chat_data or {}
-        self.bot = Mock()
-        self.job_queue = Mock()
 
 
-class MockTelegramApplication:
-    """Мок для telegram.ext.Application"""
-    def __init__(self, token='fake_token'):
-        self.token = token
-        self.bot = Mock()
-        self.handlers = []
+class MockBotAdapter:
+    """Мок для BotAdapter"""
+    
+    def __init__(self):
+        self.send_message = AsyncMock()
+        self.send_menu = AsyncMock()
+        self.save_message = AsyncMock()
+        self.save_form_field = AsyncMock()
+        self.send_notification = Mock()
+        self.get_user_data = Mock()
         
-    def add_handler(self, handler):
-        """Добавить handler"""
-        self.handlers.append(handler)
-        
-    def run_polling(self):
-        """Мок запуска polling"""
-        pass
+        # Настройка возвращаемых значений
+        self.get_user_data.return_value = {
+            'user_id': 123,
+            'chat_id': 456,
+            'username': 'testuser',
+            'message_text': 'test message'
+        }
 
 
-def create_test_scenario_graph():
-    """Создает тестовый граф сценария"""
+class MockTelegramAdapter:
+    """Мок для TelegramAdapter"""
+    
+    def __init__(self):
+        self.send_text_message = AsyncMock()
+        self.send_menu_message = AsyncMock()
+        self.get_user_id = Mock(return_value=123)
+        self.get_chat_id = Mock(return_value=456)
+        self.get_username = Mock(return_value="testuser")
+        self.get_message_text = Mock(return_value="test message")
+
+
+class MockDatabaseAdapter:
+    """Мок для DatabaseAdapter"""
+    
+    def __init__(self):
+        self.save_message = AsyncMock()
+        self.get_or_create_chat = AsyncMock()
+        self.update_chat_context = AsyncMock()
+        self.save_form_field = AsyncMock()
+        self.get_scenario_by_bot = AsyncMock()
+        self.get_scenario_by_id = AsyncMock()
+
+
+class MockNotificationAdapter:
+    """Мок для NotificationAdapter"""
+    
+    def __init__(self):
+        self.send_notification = Mock()
+
+
+def create_mock_node(node_type: str, data: Dict[str, Any] = None, node_id: str = "test_node") -> Dict[str, Any]:
+    """Создать мок узла сценария"""
     return {
-        "nodes": [
-            {
-                "id": "start",
-                "type": "message",
-                "data": {"text": "Добро пожаловать! Как вас зовут?"}
-            },
-            {
-                "id": "name_form",
-                "type": "form",
-                "data": {
-                    "question": "Введите ваше имя:",
-                    "field": "name"
-                }
-            },
-            {
-                "id": "age_form", 
-                "type": "form",
-                "data": {
-                    "question": "Сколько вам лет?",
-                    "field": "age"
-                }
-            },
-            {
-                "id": "condition_adult",
-                "type": "condition",
-                "data": {
-                    "expression": "age >= 18"
-                }
-            },
-            {
-                "id": "adult_message",
-                "type": "message",
-                "data": {"text": "Отлично, {name}! Вы совершеннолетний."}
-            },
-            {
-                "id": "minor_message",
-                "type": "message", 
-                "data": {"text": "Привет, {name}! Вы еще несовершеннолетний."}
-            },
-            {
-                "id": "notification",
-                "type": "notification",
-                "data": {
-                    "type": "telegram",
-                    "chat_id": "123456789",
-                    "message": "Новый пользователь: {name}, возраст: {age}"
-                }
-            },
-            {
-                "id": "datawrite",
-                "type": "datawrite",
-                "data": {
-                    "pairs": [
-                        {"field": "full_name", "value": "{name}"},
-                        {"field": "user_age", "value": "{age}"}
-                    ]
-                }
-            },
-            {
-                "id": "end",
-                "type": "message",
-                "data": {"text": "Спасибо за регистрацию!"}
-            }
-        ],
-        "edges": [
-            {"source": "start", "target": "name_form"},
-            {"source": "name_form", "target": "age_form"},
-            {"source": "age_form", "target": "condition_adult"},
-            {"source": "condition_adult", "target": "adult_message", "condition": True},
-            {"source": "condition_adult", "target": "minor_message", "condition": False},
-            {"source": "adult_message", "target": "notification"},
-            {"source": "minor_message", "target": "notification"},
-            {"source": "notification", "target": "datawrite"},
-            {"source": "datawrite", "target": "end"}
+        "id": node_id,
+        "type": node_type,
+        "data": data or {}
+    }
+
+
+def create_message_node(text: str = "Test message", node_id: str = "msg_node") -> Dict[str, Any]:
+    """Создать узел типа message"""
+    return create_mock_node("message", {"text": text}, node_id)
+
+
+def create_condition_node(expression: str = "true", node_id: str = "cond_node") -> Dict[str, Any]:
+    """Создать узел типа condition"""
+    return create_mock_node("condition", {"expression": expression}, node_id)
+
+
+def create_notification_node(message: str = "Test notification", 
+                           notification_type: str = "telegram",
+                           chat_id: str = "123456",
+                           node_id: str = "notif_node") -> Dict[str, Any]:
+    """Создать узел типа notification"""
+    return create_mock_node("notification", {
+        "message": message,
+        "type": notification_type,
+        "chat_id": chat_id
+    }, node_id)
+
+
+def create_datawrite_node(pairs: list = None, node_id: str = "data_node") -> Dict[str, Any]:
+    """Создать узел типа datawrite"""
+    if pairs is None:
+        pairs = [{"variable": "test_var", "value": "test_value"}]
+    return create_mock_node("datawrite", {"pairs": pairs}, node_id)
+
+
+def create_form_node(fields: list = None, node_id: str = "form_node") -> Dict[str, Any]:
+    """Создать узел типа form"""
+    if fields is None:
+        fields = [{"name": "test_field", "type": "text"}]
+    return create_mock_node("form", {"fields": fields}, node_id)
+
+
+def create_menu_node(buttons: list = None, label: str = "Choose option:",
+                    node_id: str = "menu_node") -> Dict[str, Any]:
+    """Создать узел типа menu"""
+    if buttons is None:
+        buttons = [
+            {"label": "Option 1", "id": "opt1"},
+            {"label": "Option 2", "id": "opt2"}
         ]
-    }
+    return create_mock_node("menu", {
+        "buttons": buttons,
+        "label": label
+    }, node_id)
 
 
-def create_simple_scenario_graph():
-    """Создает простой тестовый граф сценария"""
-    return {
-        "nodes": [
-            {
-                "id": "start",
-                "type": "message",
-                "data": {"text": "Привет! Как дела?"}
-            },
-            {
-                "id": "name_form",
-                "type": "form",
-                "data": {
-                    "question": "Как вас зовут?",
-                    "field": "name"
-                }
-            },
-            {
-                "id": "end",
-                "type": "message",
-                "data": {"text": "Спасибо, {name}!"}
-            }
-        ],
-        "edges": [
-            {"source": "start", "target": "name_form"},
-            {"source": "name_form", "target": "end"}
-        ]
-    }
+def create_break_node(node_id: str = "break_node") -> Dict[str, Any]:
+    """Создать узел типа break"""
+    return create_mock_node("break", {}, node_id)
 
 
-class TelegramTestFixtures:
-    """Фикстуры для тестирования telegram_client"""
+def create_mock_context_with_scenario(scenario_id: int = 1, 
+                                    node_id: str = "current_node",
+                                    answers: Dict[str, Any] = None,
+                                    chat_id: int = 789) -> MockContext:
+    """Создать контекст с инициализированным сценарием"""
+    return MockContext({
+        'scenario_id': scenario_id,
+        'node': node_id,
+        'answers': answers or {},
+        'chat_id': chat_id,
+        'graph': {
+            'nodes': [],
+            'edges': []
+        }
+    })
+
+
+class MockFormField:
+    """Мок для ask_form_field"""
     
-    @staticmethod
-    def create_update_with_start_command():
-        """Создает Update с командой /start"""
-        return MockTelegramUpdate(
-            message=MockTelegramMessage(text='/start')
-        )
+    def __init__(self, return_value="ASKING"):
+        self.return_value = return_value
+        self.call_count = 0
+        self.call_args = []
     
-    @staticmethod
-    def create_update_with_text(text='Hello'):
-        """Создает Update с текстовым сообщением"""
-        return MockTelegramUpdate(
-            message=MockTelegramMessage(text=text)
-        )
-    
-    @staticmethod
-    def create_context_with_data(user_data=None):
-        """Создает Context с пользовательскими данными"""
-        return MockTelegramContext(user_data=user_data or {})
-    
-    @staticmethod
-    def create_context_with_chat_and_scenario(chat_id, scenario_id, graph=None):
-        """Создает Context с данными чата и сценария"""
-        return MockTelegramContext(user_data={
-            'chat_id': chat_id,
-            'scenario_id': scenario_id,
-            'graph': graph or create_simple_scenario_graph(),
-            'node': 'start',
-            'answers': {}
-        })
-
-
-# Константы для тестов
-TEST_USER_ID = 123456789
-TEST_USERNAME = 'testuser'
-TEST_CHAT_ID = 987654321
-TEST_BOT_TOKEN = '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11'
-TEST_SYSTEM_BOT_TOKEN = '654321:XYZ-ABC9876fedcba-123'
-
-
-def patch_telegram_imports():
-    """
-    Возвращает словарь для патчинга импортов telegram
-    Использовать с @patch.dict('sys.modules', patch_telegram_imports())
-    """
-    telegram_mock = Mock()
-    telegram_mock.Update = MockTelegramUpdate
-    telegram_mock.ReplyKeyboardMarkup = Mock()
-    telegram_mock.KeyboardButton = Mock()
-    
-    telegram_ext_mock = Mock()
-    telegram_ext_mock.Application = MockTelegramApplication
-    telegram_ext_mock.CommandHandler = Mock()
-    telegram_ext_mock.MessageHandler = Mock()
-    telegram_ext_mock.filters = Mock()
-    telegram_ext_mock.ContextTypes = Mock()
-    telegram_ext_mock.ContextTypes.DEFAULT_TYPE = MockTelegramContext
-    telegram_ext_mock.ConversationHandler = Mock()
-    
-    return {
-        'telegram': telegram_mock,
-        'telegram.ext': telegram_ext_mock
-    }
+    async def __call__(self, update, context):
+        self.call_count += 1
+        self.call_args.append((update, context))
+        return self.return_value
