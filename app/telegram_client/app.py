@@ -19,6 +19,7 @@ from telegram_client.handlers import (
     process_datawrite_node, process_form_node, process_menu_node, process_break_node,
     CONTINUE_SCENARIO, WAIT_USER_INPUT, END_CONVERSATION
 )
+from telegram_client.adapters import create_bot_adapter
 from telegram_client.utils import get_start
 
 logging.basicConfig(
@@ -56,6 +57,11 @@ async def run_scenario(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Главная функция обработки узлов сценария"""
+    # Создаем адаптер бота
+    import os
+    system_bot_token = os.environ.get("SYSTEM_BOT_TOKEN")
+    bot_adapter = create_bot_adapter(system_bot_token)
+    
     while True:
         # Получаем текущий узел
         node = get_current_node(context)
@@ -66,25 +72,24 @@ async def ask_next_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         node_type = node["type"]
         
         if node_type == 'message':
-            signal = await process_message_node(update, context, node)
+            signal = await process_message_node(update, context, node, bot_adapter)
         elif node_type == 'condition':
-            signal = await process_condition_node(update, context, node)
+            signal = await process_condition_node(update, context, node, bot_adapter)
         elif node_type == 'notification':
-            signal = await process_notification_node(update, context, node)
+            signal = await process_notification_node(update, context, node, bot_adapter)
         elif node_type == 'datawrite':
-            signal = await process_datawrite_node(update, context, node)
+            signal = await process_datawrite_node(update, context, node, bot_adapter)
         elif node_type == 'form':
-            signal = await process_form_node(update, context, node)
+            signal = await process_form_node(update, context, node, bot_adapter)
         elif node_type == 'menu':
-            signal = await process_menu_node(update, context, node)
+            signal = await process_menu_node(update, context, node, bot_adapter)
         elif node_type == 'break':
-            signal = await process_break_node(update, context, node)
+            signal = await process_break_node(update, context, node, bot_adapter)
         else:
             # Обработка неизвестного типа узла
             error_message = 'Неизвестный тип действия или не задана форма.'
-            await update.message.reply_text(error_message)
-            # Сохраняем сообщение бота
-            await save_bot_message(context.user_data.get('chat_id'), error_message)
+            await bot_adapter.send_message(update, error_message)
+            await bot_adapter.save_message(context.user_data.get('chat_id'), error_message, is_user=False)
             context.user_data['node'] = get_start(context.user_data['graph'])["id"]
             return await run_scenario(update, context)
         
