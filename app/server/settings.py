@@ -25,22 +25,24 @@ environ.Env.read_env(f'{BASE_DIR}/.env')
 
 SECRET_KEY = env.str('SECRET_KEY', default='dv7_vg+yan&j+6l8aicz^3#k@#w7dz*fbw%44%*==a#uiboh*4')
 
-ALLOWED_HOSTS = [
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
     '127.0.0.1',
     'localhost',
-    '79.174.93.201',
-]
+])
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://79.174.93.201',
-]
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
-    'http://79.174.93.201',
-]
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
+    'http://127.0.0.1',
+    'http://localhost',
+])
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[
+    'http://127.0.0.1',
+    'http://localhost',
+])
+
+SESSION_COOKIE_SAMESITE = False
+CSRF_COOKIE_SAMESITE = False
 
 
 # Application definition
@@ -61,10 +63,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

@@ -1,1 +1,1 @@
-export const BASE_URL = process.env.REACT_APP_API_URL ?? 'http://79.174.93.201:8000'
+export const BASE_URL = window.RUNTIME_CONFIG?.API_URL
