@@ -14,8 +14,19 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import os
+from django.conf import settings
 from django.contrib import admin
-from django.urls import path, include
+from django.http import FileResponse, Http404
+from django.urls import path, include, re_path
+
+
+def serve_react(request, path=''):
+    index_file = os.path.join(getattr(settings, 'WHITENOISE_ROOT', ''), 'index.html')
+    if not os.path.exists(index_file):
+        raise Http404
+    return FileResponse(open(index_file, 'rb'), content_type='text/html')
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -23,4 +34,5 @@ urlpatterns = [
     path('api/bots/', include('apps.bots.urls')),
     path('api/scenarios/', include('apps.scenarios.urls')),
     path('api/chats/', include('apps.chats.urls')),
+    re_path(r'^.*$', serve_react),
 ]

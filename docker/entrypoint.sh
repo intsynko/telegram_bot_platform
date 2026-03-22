@@ -2,7 +2,7 @@
 set -e
 
 echo "Generating runtime config..."
-cat > /usr/share/nginx/html/config.js << EOF
+cat > /app/frontend/config.js << EOF
 window.RUNTIME_CONFIG = {
   API_URL: '${API_URL:-}'
 };
@@ -11,5 +11,5 @@ EOF
 echo "Running migrations..."
 python manage.py migrate --noinput
 
-echo "Starting services..."
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+echo "Starting server..."
+exec gunicorn server.wsgi:application --bind 0.0.0.0:80 --workers 2
