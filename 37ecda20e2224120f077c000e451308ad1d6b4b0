@@ -1,0 +1,44 @@
+docker/entrypoint.sh
+  3564a9646f4fc148 5,14
+app/server/settings.py
+  3564a9646f4fc148 68,145-150
+Dockerfile
+  3564a9646f4fc148 14,32
+app/server/urls.py
+  3564a9646f4fc148 17-18,20-21,23-29,37
+requirements.txt
+  3564a9646f4fc148 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.17",
+  "base_commit_sha": "37ecda20e2224120f077c000e451308ad1d6b4b0",
+  "prompts": {
+    "3564a9646f4fc148": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "0ca3a77f-0707-42c1-9da7-42290508ac2c",
+        "model": "claude-4.6-sonnet-medium-thinking"
+      },
+      "human_author": "Kostya Intsyn <k.intsyn@bestdoctor.ru>",
+      "messages": [],
+      "total_additions": 28,
+      "total_deletions": 10,
+      "accepted_lines": 25,
+      "overriden_lines": 1
+    },
+    "7b305e0c64b11cc4": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "cb5a1659-1871-4b3b-91a6-9d3e45e8aecb",
+        "model": "claude-4.6-sonnet-medium-thinking"
+      },
+      "human_author": "Kostya Intsyn <k.intsyn@bestdoctor.ru>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 27,
+      "overriden_lines": 0
+    }
+  }
+}
